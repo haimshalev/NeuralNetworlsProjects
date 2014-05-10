@@ -7,8 +7,8 @@ namespace BamPhoneNumbersFrom16BitIcons
     {
         private readonly int _numberOfInputNeurons;
         private readonly int _numberOfOutputNeurons;
-        private readonly double[][] _transformationMatrix;
-        private readonly double[][] _transformationMatrixReverse;
+        private readonly int[][] _transformationMatrix;
+        private readonly int[][] _transformationMatrixReverse;
 
         private const int Threshold = 0;
 
@@ -24,13 +24,13 @@ namespace BamPhoneNumbersFrom16BitIcons
             _numberOfOutputNeurons = numberOfOutputNeurons;
 
             // initializing the transformation matrices
-            _transformationMatrix = new double[_numberOfInputNeurons][];
+            _transformationMatrix = new int[_numberOfInputNeurons][];
             for (var i = 0; i < _numberOfInputNeurons; i++)
-                _transformationMatrix[i] = new double[_numberOfOutputNeurons];
+                _transformationMatrix[i] = new int[_numberOfOutputNeurons];
 
-            _transformationMatrixReverse = new double[_numberOfOutputNeurons][];
+            _transformationMatrixReverse = new int[_numberOfOutputNeurons][];
             for (var i = 0; i < _numberOfOutputNeurons; i++)
-                _transformationMatrixReverse[i] = new double[_numberOfInputNeurons];
+                _transformationMatrixReverse[i] = new int[_numberOfInputNeurons];
         }
 
         /// <summary>
@@ -105,7 +105,7 @@ namespace BamPhoneNumbersFrom16BitIcons
         /// <param name="input">the input vector</param>
         /// <param name="output">the current association</param>
         /// <returns>true if the output vector stays the same</returns>
-        private bool PropagateLayer(double[][] transformationMatrix, int[] input, int[] output)
+        private bool PropagateLayer(int[][] transformationMatrix, int[] input, int[] output)
         {
             // initialize the network to stable
             var stable = true;
@@ -116,9 +116,9 @@ namespace BamPhoneNumbersFrom16BitIcons
                 // vector multiplication with the correct matrix
                 int sum;
                 if (input.Length != transformationMatrix.Length)
-                    sum = (int) input.Select((t, j) => transformationMatrix[i][j]*t).Sum();
+                    sum = input.Select((t, j) => transformationMatrix[i][j]*t).Sum();
                 else
-                    sum = (int) input.Select((t, j) => transformationMatrix[j][i]*t).Sum();
+                    sum = input.Select((t, j) => transformationMatrix[j][i]*t).Sum();
                 
                 // threshold the output
                 var outputVal = Sign(sum);
