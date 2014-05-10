@@ -1,9 +1,13 @@
 ﻿using System;
+using System.Globalization;
 
 namespace BamPhoneNumbersFrom16BitIcons
 {
     class BamNetworkPhoneToIconsWrapper
     {
+        // 4 bits is enough for representing 10 numbers
+        private const int BitsForDigit = 4;
+
         #region Properties
         
             private string[] _phoneNumbers;
@@ -45,8 +49,14 @@ namespace BamPhoneNumbersFrom16BitIcons
             _bamNeuralNetwork = new BamNeuralNetwork(_numberInputNeurons, _numberOutputNeurons);
 
             // add the associations to the network
-            for (var i = 0; i < _biPolarIcons.Length ; i++)
+            for (var i = 0; i < _biPolarIcons.Length; i++)
+            {
+                // Test the convert methods
+                Console.WriteLine(_phoneNumbers[i]);
+                Console.WriteLine(ConvertBiPolarPhoneNumberToString(_biPolarPhoneNumbers[i]));
+
                 _bamNeuralNetwork.AddAssociation(_biPolarIcons[i], _biPolarPhoneNumbers[i]);
+            }
         }
 
         /// <summary>
@@ -76,7 +86,34 @@ namespace BamPhoneNumbersFrom16BitIcons
         /// <returns>a bi Polar format of the phone number</returns>
         private static int[] ConvertStringPhoneNumberToBiPolar(string phoneNumber)
         {
-            throw new NotImplementedException();
+            // initialize a binary buffer
+            var binaryBuffer = new int[phoneNumber.Length * BitsForDigit];
+
+            var i = 0;
+
+            // for each digit , convert it to binary
+            foreach (var digit in phoneNumber)
+            {
+                // parse the digit to number
+                var x = int.Parse(digit.ToString(CultureInfo.InvariantCulture));
+
+                i += BitsForDigit;
+                var iteration = 1;
+                
+                // add the ones where needed
+                while (x != 0)
+                {
+                    if ((x & 1) == 1)
+                        binaryBuffer[i - iteration] = 1;
+                    
+                    x >>= 1;
+                    iteration++;
+                }
+
+            }
+            
+            // return the biPolar Representation
+            return Convert16BitIconToBiPolar(binaryBuffer);
         }
 
         /// <summary>
@@ -86,7 +123,24 @@ namespace BamPhoneNumbersFrom16BitIcons
         /// <returns>string representation of the phone number</returns>
         public static string ConvertBiPolarPhoneNumberToString(int[] biPolarPhoneNumber)
         {
-            throw new NotImplementedException();
+            // get the binary representation
+            var binaryBuffer = Convert16BitBiPolarIconToBinary(biPolarPhoneNumber);
+
+            var phoneNumber = "";
+
+            // convert the binary buffer to string
+            for (var i = 0; i < binaryBuffer.Length; i += BitsForDigit)
+            {
+                int digit = 0;
+
+                for (var j = BitsForDigit - 1; j >= 0; j--)
+                    digit += binaryBuffer[i + j]* (int)(Math.Pow(2, BitsForDigit -1 - j));
+
+                phoneNumber += digit;
+            }
+
+            return phoneNumber;
+
         }
 
         /// <summary>
@@ -116,17 +170,53 @@ namespace BamPhoneNumbersFrom16BitIcons
         /// <returns>a biPolar icon</returns>
         public static int[] Convert16BitIconToBiPolar(int[] icon)
         {
-            throw new NotImplementedException();            
+            // initialize the biPolar buffer
+            var biPolarBuffer = new int[icon.Length];
+
+            for (var i = 0; i < icon.Length; i++)
+            {
+                switch (icon[i])
+                {
+                    case 1:
+                        biPolarBuffer[i] = 1;
+                        break;
+                    case 0:
+                        biPolarBuffer[i] = -1;
+                        break;
+                    default:
+                        throw new Exception("the icon has wrong bit value");
+                }
+            }
+
+            return biPolarBuffer;
         }
         
         /// <summary>
         /// Convert the biPolar based icon to binary format
         /// </summary>
-        /// <param name="icon">biPolar icon</param>
+        /// <param name="biPolarIcon">biPolar icon</param>
         /// <returns>a binary icon</returns>
-        public static int[] Convert16BitBiPolarIconToBinary(int[] icon)
+        public static int[] Convert16BitBiPolarIconToBinary(int[] biPolarIcon)
         {
-            throw new NotImplementedException();            
+            // initialize the biPolar buffer
+            var binaryBuffer = new int[biPolarIcon.Length];
+
+            for (var i = 0; i < biPolarIcon.Length; i++)
+            {
+                switch (biPolarIcon[i])
+                {
+                    case 1:
+                        binaryBuffer[i] = 1;
+                        break;
+                    case -1:
+                        binaryBuffer[i] = 0;
+                        break;
+                    default:
+                        throw new Exception("the icon has wrong bit value");
+                }
+            }
+
+            return binaryBuffer;           
         }
 
         /// <summary>
