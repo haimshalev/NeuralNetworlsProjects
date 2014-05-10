@@ -29,11 +29,16 @@ namespace BamPhoneNumbersFrom16BitIcons
             
             #region Retrival
 
-            // TODO: setting new test vectors
-            
-            // TODO: Associate the new test vectors
-            
-            // TODO: output results
+            // set new test vectors
+            var testVector = new[] { 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0, 1 };
+            var outputNumber = "0000000000";
+
+            // Associate the new test vectors
+            bamNeuralNetworkWrapper.Associate(ref testVector,ref outputNumber);
+
+            // output results
+            Console.WriteLine("outputNumber: " + outputNumber);
+            Console.WriteLine("testVector: " + string.Join(",",testVector));
 
             #endregion
         }

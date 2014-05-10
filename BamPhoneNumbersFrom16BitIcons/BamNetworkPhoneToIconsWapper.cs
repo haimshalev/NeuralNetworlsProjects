@@ -50,13 +50,7 @@ namespace BamPhoneNumbersFrom16BitIcons
 
             // add the associations to the network
             for (var i = 0; i < _biPolarIcons.Length; i++)
-            {
-                // Test the convert methods
-                Console.WriteLine(_phoneNumbers[i]);
-                Console.WriteLine(ConvertBiPolarPhoneNumberToString(_biPolarPhoneNumbers[i]));
-
                 _bamNeuralNetwork.AddAssociation(_biPolarIcons[i], _biPolarPhoneNumbers[i]);
-            }
         }
 
         /// <summary>
@@ -224,10 +218,16 @@ namespace BamPhoneNumbersFrom16BitIcons
         /// </summary>
         /// <param name="icon">16 bit icon</param>
         /// <param name="phoneNumber">string phone number</param>
-        public void Associate(int[] icon, string phoneNumber)
+        public void Associate(ref int[] icon, ref string phoneNumber)
         {
+            var biPolarIcon = Convert16BitIconToBiPolar(icon);
+            var biPolarPhoneNumber = ConvertStringPhoneNumberToBiPolar(phoneNumber);
+
             // convert the input arguments to biPolar and run associate
-            Associate(Convert16BitIconToBiPolar(icon), ConvertStringPhoneNumberToBiPolar(phoneNumber));
+            Associate(biPolarIcon, biPolarPhoneNumber);
+
+            phoneNumber = ConvertBiPolarPhoneNumberToString(biPolarPhoneNumber);
+            icon = Convert16BitBiPolarIconToBinary(biPolarIcon);
         }
 
         /// <summary>
