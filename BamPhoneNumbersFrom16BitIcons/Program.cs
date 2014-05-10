@@ -2,7 +2,7 @@
 
 namespace BamPhoneNumbersFrom16BitIcons
 {
-    class Program
+    class BamPhoneNumbersFrom16BitIconsProgram
     {
         public const int NumberInputNeurons = 15;
         public const int NumberOutputNeurons = 3;
