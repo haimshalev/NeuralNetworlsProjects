@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace ClassifyHebLettersUsingBackProp
 {
@@ -302,20 +303,20 @@ namespace ClassifyHebLettersUsingBackProp
         /// <param name="learnRate">the back propagation learning rate</param>
         /// <param name="momentum">the back propagation mumentum const</param>
         /// <param name="mseLimit">the desired summed mse for all the data</param>
-        public void Train(double[][] trainData, int maxEpochs, double learnRate, double momentum, double mseLimit)
+        public void Train(List<InputDataStructure> trainData, int maxEpochs, double learnRate, double momentum, double mseLimit)
         {
             var epoch = 0;
-            var xValues = new double[_numInput];  
-            var tValues = new double[_numOutput]; 
 
             // create an indexes array
-            var sequence = new int[trainData.Length];
+            var sequence = new int[trainData.Count];
             for (var i = 0; i < sequence.Length; ++i)
                 sequence[i] = i;
 
             // while we didn't get to the epoch limit
             while (epoch < maxEpochs)
             {
+                Console.WriteLine("Starting epcoch number " + epoch);
+
                 // calculate meanSquaredError on the training set to see that we are not over fitting
                 var mse = MeanSquaredError(trainData);
 
@@ -325,15 +326,16 @@ namespace ClassifyHebLettersUsingBackProp
                 // visit each training data in random order
                 Shuffle(sequence); 
 
-                // run over all the training vectors and update weights 
-                for (var i = 0; i < trainData.Length; ++i)
+                // run over all the training data and update weights 
+                for (var i = 0; i < trainData.Count; ++i)
                 {
                     var idx = sequence[i];
+
                     // extract the input vector
-                    Array.Copy(trainData[idx], xValues, _numInput); 
+                    double[] xValues = trainData[idx].GetDataVectorCopy();
 
                     // extract the target vector
-                    Array.Copy(trainData[idx], _numInput, tValues, 0, _numOutput);
+                    double[] tValues = trainData[idx].GetTargetVectorCopy();
 
                     // copy xValues in, compute outputs (and store them in the internal members)
                     FeedForward(xValues);
@@ -353,20 +355,18 @@ namespace ClassifyHebLettersUsingBackProp
         /// </summary>
         /// <param name="trainData">input labeld data</param>
         /// <returns>averaged mean squared error</returns>
-        private double MeanSquaredError(double[][] trainData) 
+        private double MeanSquaredError(List<InputDataStructure> trainData) 
         {
             var sumSquaredError = 0.0;
-            var xValues = new double[_numInput];  
-            var tValues = new double[_numOutput]; 
 
             // for each vector in the input db
-            foreach (double[] trainVector in trainData)
+            foreach (var inputData in trainData)
             {
                 // extract the input vector
-                Array.Copy(trainVector, xValues, _numInput);
+                double[] xValues = inputData.GetDataVectorCopy();
 
                 // extract the target vector
-                Array.Copy(trainVector, _numInput, tValues, 0, _numOutput);
+                double[] tValues = inputData.GetTargetVectorCopy();
 
                 // compute output using current weights
                 var yValues = FeedForward(xValues); 
@@ -377,7 +377,7 @@ namespace ClassifyHebLettersUsingBackProp
             }
 
             // return the averaged mean squared error
-            return sumSquaredError / trainData.Length;
+            return sumSquaredError / trainData.Count;
         }
 
         /// <summary>
@@ -387,37 +387,37 @@ namespace ClassifyHebLettersUsingBackProp
         /// <param name="printEachLetterSummary">if true , prints each letter result and target</param>
         /// <param name="printLetters">if true print each letter to console</param>
         /// <returns>the precentage of the correct results</returns>
-        public double Accuracy(double[][] testData , bool printEachLetterSummary = false, bool printLetters = false)
+        public double Accuracy(List<InputDataStructure> testData , bool printEachLetterSummary = false, bool printLetters = false)
         {
             var numCorrect = 0;
-            var inputValues = new double[_numInput]; 
-            var outputValues = new double[_numOutput];
-
+            
             // for each vector in the test set calculate the output of the network and check his label
-            foreach (var testVec in testData)
+            foreach (var dataStruct in testData)
             {
-                // copy the input to the inputValues array
-                Array.Copy(testVec, inputValues, _numInput); 
-                // copy the labels to the outputValues array
-                Array.Copy(testVec, _numInput, outputValues, 0, _numOutput);
+                // extract the input vector
+                double[] xValues = dataStruct.GetDataVectorCopy();
+
+                // extract the target vector
+                double[] tValues = dataStruct.GetTargetVectorCopy();
 
                 // compute the output values of the network for the current test vector
-                var yValues = FeedForward(inputValues); 
+                var yValues = FeedForward(xValues); 
 
                 // get the index of largest value - and choose this label
                 var maxIndex = MaxIndex(yValues);
-                var readlMaxIndex = MaxIndex(outputValues);
+                var readlMaxIndex = MaxIndex(tValues);
 
-                if (printLetters) HebLettersBackPropProgram.PrintLetter(testVec);
+                if (printLetters) Console.WriteLine(dataStruct);
+                ;
                 if (printEachLetterSummary)
                     Console.WriteLine("Computed NN value is :" + maxIndex +  ", Real target value is : " +  readlMaxIndex);
 
                 // if the network retuned a corrrect output increase the counter
-                if (outputValues[maxIndex].Equals(1.0)) ++numCorrect;
+                if (tValues[maxIndex].Equals(1.0)) ++numCorrect;
             }
             
             // return the network accuracy on the specified data
-            return testData.Length != 0 ? ((double)numCorrect) / testData.Length : 0;
+            return testData.Count != 0 ? ((double)numCorrect) / testData.Count : 0;
         }
 
         #region Activation functions helpers
