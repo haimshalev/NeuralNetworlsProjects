@@ -10,7 +10,7 @@ namespace BamPhoneNumbersFrom16BitIcons
         private readonly int[][] _transformationMatrix;
         private readonly int[][] _transformationMatrixReverse;
 
-        private const int Threshold = 0;
+        private const int BamThreshold = 0;
 
         /// <summary>
         /// Cto'r
@@ -121,7 +121,7 @@ namespace BamPhoneNumbersFrom16BitIcons
                     sum = input.Select((t, j) => transformationMatrix[j][i]*t).Sum();
                 
                 // threshold the output
-                var outputVal = Sign(sum);
+                var outputVal = Threshold(sum);
 
                 // if we didn't get the desired output, unstable
                 if (outputVal != output[i])
@@ -140,7 +140,7 @@ namespace BamPhoneNumbersFrom16BitIcons
         /// <param name="x">input value</param>
         /// <param name="threshold">checked threshold</param>
         /// <returns>1 if the input value greater then the threshold, else -1</returns>
-        private static int Sign(double x, int threshold = Threshold)
+        private static int Threshold(double x, int threshold = BamThreshold)
         {
             if (x > threshold) return 1;
             return -1;
