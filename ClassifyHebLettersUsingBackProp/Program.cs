@@ -20,7 +20,7 @@ namespace ClassifyHebLettersUsingBackProp
         const int NumOutput = 5;
 
         // training properties
-        const int MaxEpochs = 4000;
+        const int MaxEpochs = 3000;
         const double LearnRate = 0.01;
         const double Momentum = 0.001;
         const double MseLimit = 0.020;
@@ -35,11 +35,10 @@ namespace ClassifyHebLettersUsingBackProp
             Console.ReadLine();
 
             Console.WriteLine("\nBegin neural network classification and prediction");
-            Console.WriteLine("X-data is x0, x1, x2, ... , x100");
-            Console.WriteLine("Y-data is aleph = 1 0 0 0 0, beith = 0 1 0 0 0, giemel = 0 0 1 0 0, daled = 0 0 0 1 0, hei = 0 0 0 0 1");
+            Console.WriteLine("target-representation is aleph = 1 0 0 0 0, beith = 0 1 0 0 0, giemel = 0 0 1 0 0, daled = 0 0 0 1 0, hei = 0 0 0 0 1");
 
 
-            Console.WriteLine("Creating 80% training and 20% test data matrices");
+            Console.WriteLine("Seperation input data to 80% training and 20% test");
             var trainData = new List<InputDataStructure>();
             var testData = new List<InputDataStructure>();
             MakeTrainTest(allData, trainData, testData);
@@ -52,11 +51,11 @@ namespace ClassifyHebLettersUsingBackProp
             var nn = new NeuralNetwork(NumInput, NumHidden, NumOutput);
 
             // set the training properties and train the network on the training data
-            Console.WriteLine("Setting maxEpochs = " + MaxEpochs +
+            Console.WriteLine("\nSetting maxEpochs = " + MaxEpochs +
                               ", learnRate = " + LearnRate + 
                               ", momentum = " + Momentum + 
                               ", mseLimit = " + MseLimit + " for stopping condition");
-            Console.WriteLine("\nBeginning training using incremental back-propagation\n");
+            Console.WriteLine("Beginning training:\n");
             nn.Train(trainData, MaxEpochs, LearnRate, Momentum, MseLimit);
             Console.WriteLine("Training complete");
 
@@ -68,7 +67,7 @@ namespace ClassifyHebLettersUsingBackProp
             var testAcc = nn.Accuracy(testData, printEachLetterSummary: true, printLetters: true);
             Console.WriteLine("\nAccuracy on test data = " + testAcc.ToString("F4"));
 
-            Console.WriteLine("\nEnd of program\n");
+            Console.WriteLine("\nEnd of program");
             Console.ReadLine();
         }
 
@@ -83,34 +82,57 @@ namespace ClassifyHebLettersUsingBackProp
             if (allData == null) throw new ArgumentNullException("allData");
 
             // split allData into 80% trainData and 20% testData
-            var rnd = new Random(0);
-            int totInput = allData.Count;
+            int sizeInput = allData.Count;
 
-            // hard-coded 80-20 split
-            var numOfTrainObjects = (int) (totInput*0.80); 
+            int i;
 
             // create a random sequence of indexes
-            var sequence = new int[totInput]; 
+            var sequence = CreateIndexedArray(allData.Count);
+            
+
+            // the first 80% of the objets go to training
+            for (i = 0; i < (int) (sizeInput*0.80); ++i) 
+                trainData.Add(allData[sequence[i]].GetCopy());
+            
+            // the last 20% used as test data
+            for (; i < sizeInput; ++i) 
+                testData.Add(allData[sequence[i]].GetCopy());
+        }
+
+        /// <summary>
+        /// Shuffle the input index array
+        /// </summary>
+        /// <param name="indexArr">the index arr to shuffle</param>
+        public static void Shuffle(int[] indexArr)
+        {
+            var rnd = new Random(DateTime.Now.Millisecond);
+
+            for (var i = 0; i < indexArr.Length; ++i)
+            {
+                var randomNextIndex = rnd.Next(i, indexArr.Length);
+                var tmp = indexArr[randomNextIndex];
+                indexArr[randomNextIndex] = indexArr[i];
+                indexArr[i] = tmp;
+            }
+        }
+
+        /// <summary>
+        /// Create and return index array from specified size
+        /// </summary>
+        /// <param name="size">the size of the created array</param>
+        /// <param name="shuffel">true uf the indeces should be in random order</param>
+        /// <returns>indexed array</returns>
+        public static int[] CreateIndexedArray(int size, bool shuffel = true)
+        {
+            var sequence = new int[size];
             for (var i = 0; i < sequence.Length; ++i)
                 sequence[i] = i;
 
-            for (var i = 0; i < sequence.Length; ++i)
-            {
-                int r = rnd.Next(i, sequence.Length);
-                int tmp = sequence[r];
-                sequence[r] = sequence[i];
-                sequence[i] = tmp;
-            }
+            if (shuffel) Shuffle(sequence);
 
-            // the first objets go to training
-            var si = 0;
-            for (; si < numOfTrainObjects; ++si) 
-                trainData.Add(allData[sequence[si]].GetCopy());
-            
-            // remainder to test data
-            for (; si < totInput; ++si) 
-                testData.Add(allData[sequence[si]].GetCopy());
+            return sequence;
         }
+
 
         /// <summary>
         /// Creates and returns vector db from the input letters located in the input folder
@@ -143,6 +165,6 @@ namespace ClassifyHebLettersUsingBackProp
             // return the vector db
             return allData;
         }
-   } 
+    } 
 
 } 

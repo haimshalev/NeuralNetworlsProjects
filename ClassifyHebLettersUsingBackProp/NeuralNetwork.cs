@@ -15,24 +15,20 @@ namespace ClassifyHebLettersUsingBackProp
 
         private readonly double[] _inputs;
 
-        private readonly double[][] _ihWeights; // input-hidden
-        private readonly double[] _hBiases;
-        private readonly double[] _hOutputs;
+        private readonly double[][] _inputToHiddenWeights; 
+        private readonly double[] _hiddenBiases;
+        private readonly double[] _hiddenOutputs;
 
-        private readonly double[][] _hoWeights; // hidden-output
-        private readonly double[] _oBiases;
+        private readonly double[][] _hiddenToOutputWeights;
+        private readonly double[] _outputBiases;
 
         private readonly double[] _outputs;
 
-        // back-prop specific arrays (these could be local to method UpdateWeights)
-        private readonly double[] _oGrads; // output gradients for back-propagation
-        private readonly double[] _hGrads; // hidden gradients for back-propagation
-
-        // back-prop momentum specific arrays (these could be local to method Train)
-        private readonly double[][] _ihPrevWeightsDelta;  // for momentum with back-propagation
-        private readonly double[] _hPrevBiasesDelta;
-        private readonly double[][] _hoPrevWeightsDelta;
-        private readonly double[] _oPrevBiasesDelta; 
+        // momentum vectors
+        private readonly double[][] _inputToHiddenPrevWeightsDelta;  
+        private readonly double[] _hiddenPrevBiasesDelta;
+        private readonly double[][] _hiddenToOutputPrevWeightsDelta;
+        private readonly double[] _outputPrevBiasesDelta; 
 
         #endregion
 
@@ -44,97 +40,51 @@ namespace ClassifyHebLettersUsingBackProp
         /// <param name="numOutput">number of output layer neurons, used also for labeling</param>
         public NeuralNetwork(int numInput, int numHidden, int numOutput)
         {
-            // for InitializeWeights() and Shuffle()
+            // initialize new random variable for initializing weights
             _rnd = new Random(0); 
-
             _numInput = numInput;
             _numHidden = numHidden;
             _numOutput = numOutput;
 
+            // initialize weights arrays
             _inputs = new double[numInput];
 
-            _ihWeights = MakeMatrix(numInput, numHidden);
-            _hBiases = new double[numHidden];
-            _hOutputs = new double[numHidden];
+            _inputToHiddenWeights = CreateMatrix(numInput, numHidden);
+            _hiddenBiases = new double[numHidden];
+            _hiddenOutputs = new double[numHidden];
 
-            _hoWeights = MakeMatrix(numHidden, numOutput);
-            _oBiases = new double[numOutput];
+            _hiddenToOutputWeights = CreateMatrix(numHidden, numOutput);
+            _outputBiases = new double[numOutput];
 
             _outputs = new double[numOutput];
 
-            // back-prop related arrays below
-            _hGrads = new double[numHidden];
-            _oGrads = new double[numOutput];
-
-            _ihPrevWeightsDelta = MakeMatrix(numInput, numHidden);
-            _hPrevBiasesDelta = new double[numHidden];
-            _hoPrevWeightsDelta = MakeMatrix(numHidden, numOutput);
-            _oPrevBiasesDelta = new double[numOutput];
+            _inputToHiddenPrevWeightsDelta = CreateMatrix(numInput, numHidden);
+            _hiddenPrevBiasesDelta = new double[numHidden];
+            _hiddenToOutputPrevWeightsDelta = CreateMatrix(numHidden, numOutput);
+            _outputPrevBiasesDelta = new double[numOutput];
 
             // initialize the weights randomaly
             InitializeWeights();
         } 
 
         /// <summary>
-        /// sets the internal weights accordingly to the weights vector
-        /// </summary>
-        /// <param name="weights">the desired weights vector</param>
-        private void SetWeights(double[] weights)
-        {
-            // copy weights and biases in weights[] array to i-h weights, i-h biases, h-o weights, h-o biases
-            var numWeights = (_numInput * _numHidden) + (_numHidden * _numOutput) + _numHidden + _numOutput;
-            if (weights.Length != numWeights)
-                throw new Exception("Bad weights array length: ");
-
-            var k = 0; // points into weights param
-
-            for (var i = 0; i < _numInput; ++i)
-                for (var j = 0; j < _numHidden; ++j)
-                    _ihWeights[i][j] = weights[k++];
-            for (var i = 0; i < _numHidden; ++i)
-                _hBiases[i] = weights[k++];
-            for (var i = 0; i < _numHidden; ++i)
-                for (var j = 0; j < _numOutput; ++j)
-                    _hoWeights[i][j] = weights[k++];
-            for (var i = 0; i < _numOutput; ++i)
-                _oBiases[i] = weights[k++];
-        }
-
-        /// <summary>
         /// initialize the weights and biases to small random values between -0.01 to 0.01
         /// </summary>
         private void InitializeWeights()
         {
-            var numWeights = (_numInput * _numHidden) + (_numHidden * _numOutput) + _numHidden + _numOutput;
-            var initialWeights = new double[numWeights];
             const double lo = -0.01;
             const double hi = 0.01;
-            for (var i = 0; i < initialWeights.Length; ++i)
-                initialWeights[i] = (hi - lo) * _rnd.NextDouble() + lo;
-            SetWeights(initialWeights);
-        }
 
-        /// <summary>
-        /// Returns the current set of weights
-        /// </summary>
-        /// <returns>the current network's weights</returns>
-        public double[] GetWeights()
-        {
-            var numWeights = (_numInput * _numHidden) + (_numHidden * _numOutput) + _numHidden + _numOutput;
-            var result = new double[numWeights];
-            var wightIndex = 0;
-
-            foreach (var inputHiddenWeight in _ihWeights)
-                for (var j = 0; j < _ihWeights[0].Length; ++j)
-                    result[wightIndex++] = inputHiddenWeight[j];
-            foreach (var hiddenBias in _hBiases)
-                result[wightIndex++] = hiddenBias;
-            foreach (var hiddenOutputWeight in _hoWeights)
-                for (var j = 0; j < _hoWeights[0].Length; ++j)
-                    result[wightIndex++] = hiddenOutputWeight[j];
-            foreach (var outputBias in _oBiases)
-                result[wightIndex++] = outputBias;
-            return result;
+            for (var i = 0; i < _numInput; ++i)
+                for (var j = 0; j < _numHidden; ++j)
+                    _inputToHiddenWeights[i][j] = (hi - lo) * _rnd.NextDouble() + lo;
+            for (var i = 0; i < _numHidden; ++i)
+                _hiddenBiases[i] = (hi - lo) * _rnd.NextDouble() + lo;
+            for (var i = 0; i < _numHidden; ++i)
+                for (var j = 0; j < _numOutput; ++j)
+                    _hiddenToOutputWeights[i][j] = (hi - lo) * _rnd.NextDouble() + lo;
+            for (var i = 0; i < _numOutput; ++i)
+                _outputBiases[i] = (hi - lo) * _rnd.NextDouble() + lo;
         }
 
         /// <summary>
@@ -160,54 +110,44 @@ namespace ClassifyHebLettersUsingBackProp
             if (inputValues.Length != _numInput)
                 throw new Exception("Bad inputValues array length");
 
-            // hidden nodes sums scratch array
-            var hSums = new double[_numHidden]; 
+            // hidden nodes sums 
+            var hiddenBeforeActivation = new double[_numHidden]; 
 
             // output nodes sums
-            var oSums = new double[_numOutput]; 
+            var outputBeforeActivation = new double[_numOutput]; 
 
-            // copy x-values to inputs
-            for (var i = 0; i < inputValues.Length; ++i) 
-                _inputs[i] = inputValues[i];
+            // copy input values to the inner input vector
+            Array.Copy(inputValues, _inputs, inputValues.Length);
 
-            // compute i-h sum of weights * inputs
-            for (var j = 0; j < _numHidden; ++j)  
-                for (var i = 0; i < _numInput; ++i)
-                    hSums[j] += _inputs[i] * _ihWeights[i][j]; 
-            
-            // add biases to input-to-hidden sums
-            for (var i = 0; i < _numHidden; ++i)  
-                hSums[i] += _hBiases[i];
+            // calculate hidden neurons values
+            for (var hiddenIdx = 0; hiddenIdx < _numHidden; ++hiddenIdx)
+            {
+                // calculate the sum of weights * inputs for the hidden neuron
+                for (var inputIdx = 0; inputIdx < _numInput; ++inputIdx)
+                    hiddenBeforeActivation[hiddenIdx] += _inputs[inputIdx] * _inputToHiddenWeights[inputIdx][hiddenIdx];
+
+                // add the bias to the neuron
+                hiddenBeforeActivation[hiddenIdx] += _hiddenBiases[hiddenIdx];
+            }
 
             // apply the activation function to the hidden layer
             for (var i = 0; i < _numHidden; ++i) 
+                _hiddenOutputs[i] = SigmoidFunction(hiddenBeforeActivation[i]);
+
+            // calculate outputneurons values
+            for (var outputIdx = 0; outputIdx < _numOutput; ++outputIdx)
             {
-                // was HyperTan function for the activation of the hidden layert
-                //_hOutputs[i] = HyperTanFunction(hSums[i]); 
+                // calculate the sum of weights * hiddens for the output neurons
+                for (var hiddenIdx = 0; hiddenIdx < _numHidden; ++hiddenIdx)
+                    outputBeforeActivation[outputIdx] += _hiddenOutputs[hiddenIdx] * _hiddenToOutputWeights[hiddenIdx][outputIdx];
 
-                _hOutputs[i] = SigmoidFunction(hSums[i]);
-
+                // add biases to input-to-hidden sums
+                outputBeforeActivation[outputIdx] += _outputBiases[outputIdx];
             }
-
-            // compute h-o sum of weights * hOutputs
-            for (var j = 0; j < _numOutput; ++j)   
-                for (var i = 0; i < _numHidden; ++i)
-                    oSums[j] += _hOutputs[i] * _hoWeights[i][j];
-            
-            // add biases to input-to-hidden sums
-            for (var i = 0; i < _numOutput; ++i)  
-                oSums[i] += _oBiases[i];
-
+                
             // apply the activation function to the output layer
-            
-            // was softMax activation function
-            //var softOut = SoftmaxFunction(oSums); // softmax activation does all outputs at once for efficiency
-            //Array.Copy(softOut, _outputs, softOut.Length);
-            
             for (var i = 0; i < _numOutput; ++i)
-            {
-                _outputs[i] = SigmoidFunction(oSums[i]);
-            }
+                _outputs[i] = SigmoidFunction(outputBeforeActivation[i]);
 
             // return the outputs
             return GetOutputs();
@@ -226,72 +166,85 @@ namespace ClassifyHebLettersUsingBackProp
             if (tValues.Length != _numOutput)
                 throw new Exception("target values not same Length as output in UpdateWeights");
 
-            // 1. compute output gradients
-            for (var i = 0; i < _oGrads.Length; ++i)
-                _oGrads[i] = SigmoidFunctionDerviative(_outputs[i], true) * (tValues[i] - _outputs[i]);
+            var outputGradients = new double[_numOutput];
+            var hiddenGradients = new double[_numHidden]; 
 
-            // 2. compute hidden gradients
-            for (var i = 0; i < _hGrads.Length; ++i)
+            // calculate output gradients
+            for (var outputGradIdx = 0; outputGradIdx < outputGradients.Length; ++outputGradIdx)
+                outputGradients[outputGradIdx] = SigmoidFunctionDerviative(_outputs[outputGradIdx], true)
+                    * (tValues[outputGradIdx] - _outputs[outputGradIdx]);
+
+            // calculate hidden gradients
+            for (var hiddenGradIdx = 0; hiddenGradIdx < hiddenGradients.Length; ++hiddenGradIdx)
             {
                 var sum = 0.0;
 
-                // each hidden delta is the sum of numOutput terms
                 for (var j = 0; j < _numOutput; ++j) 
-                {
-                    var x = _oGrads[j] * _hoWeights[i][j];
-                    sum += x;
-                }
-                _hGrads[i] = SigmoidFunctionDerviative(_hOutputs[i], true) * sum;
+                    sum += outputGradients[j] * _hiddenToOutputWeights[hiddenGradIdx][j];
+                
+                hiddenGradients[hiddenGradIdx] = SigmoidFunctionDerviative(_hiddenOutputs[hiddenGradIdx], true) * sum;
             }
 
-            // 3a. update hidden weights (gradients must be computed right-to-left but weights
-            // can be updated in any order)
-            for (var i = 0; i < _ihWeights.Length; ++i) // 0..2 (3)
+            // update input to hidden weights
+            for (var inputIdx = 0; inputIdx < _inputToHiddenWeights.Length; ++inputIdx)
             {
-                for (var j = 0; j < _ihWeights[0].Length; ++j) // 0..3 (4)
+                for (var hiddenIdx = 0; hiddenIdx < _inputToHiddenWeights[0].Length; ++hiddenIdx)
                 {
-                    var delta = learnRate * _hGrads[j] * _inputs[i]; // compute the new delta
-                    _ihWeights[i][j] += delta; // update. note we use '+' instead of '-'. this can be very tricky.
-                    // add momentum using previous delta. on first pass old value will be 0.0 but that's OK.
-                    _ihWeights[i][j] += momentum * _ihPrevWeightsDelta[i][j];
-                    // weight decay would go here
-                    _ihPrevWeightsDelta[i][j] = delta; // don't forget to save the delta for momentum 
-                }
-            }
+                    // calculate the new delta and update the weights
+                    var delta = learnRate * hiddenGradients[hiddenIdx] * _inputs[inputIdx]; 
+                    _inputToHiddenWeights[inputIdx][hiddenIdx] += delta;
 
-            // 3b. update hidden biases
-            for (var i = 0; i < _hBiases.Length; ++i)
-            {
-                // the 1.0 below is the constant input for any bias; could leave out
-                var delta = learnRate * _hGrads[i] * 1.0;
-                _hBiases[i] += delta;
-                _hBiases[i] += momentum * _hPrevBiasesDelta[i]; // momentum
-                // weight decay here
-                _hPrevBiasesDelta[i] = delta; // don't forget to save the delta
-            }
+                    // add momentum using previous delta
+                    _inputToHiddenWeights[inputIdx][hiddenIdx] += momentum * _inputToHiddenPrevWeightsDelta[inputIdx][hiddenIdx];
 
-            // 4. update hidden-output weights
-            for (var i = 0; i < _hoWeights.Length; ++i)
-            {
-                for (var j = 0; j < _hoWeights[0].Length; ++j)
-                {
-                    // see above: hOutputs are inputs to the nn outputs
-                    var delta = learnRate * _oGrads[j] * _hOutputs[i];
-                    _hoWeights[i][j] += delta;
-                    _hoWeights[i][j] += momentum * _hoPrevWeightsDelta[i][j]; // momentum
-                    // weight decay here
-                    _hoPrevWeightsDelta[i][j] = delta; // save
+                    // save the delta for momentum 
+                    _inputToHiddenPrevWeightsDelta[inputIdx][hiddenIdx] = delta; 
                 }
             }
 
-            // 4b. update output biases
-            for (var i = 0; i < _oBiases.Length; ++i)
+            // update hidden biases
+            for (var hiddenIdx = 0; hiddenIdx < _hiddenBiases.Length; ++hiddenIdx)
             {
-                var delta = learnRate * _oGrads[i] * 1.0;
-                _oBiases[i] += delta;
-                _oBiases[i] += momentum * _oPrevBiasesDelta[i]; // momentum
-                // weight decay here
-                _oPrevBiasesDelta[i] = delta; // save
+                // calculate the new dalta and update the bias
+                var delta = learnRate * hiddenGradients[hiddenIdx];
+                _hiddenBiases[hiddenIdx] += delta;
+
+                // add momentum using previous delta
+                _hiddenBiases[hiddenIdx] += momentum * _hiddenPrevBiasesDelta[hiddenIdx]; 
+
+                // save the delta for momentum
+                _hiddenPrevBiasesDelta[hiddenIdx] = delta;
+            }
+
+            // update hidden to output weights
+            for (var hiddenIdx = 0; hiddenIdx < _hiddenToOutputWeights.Length; ++hiddenIdx)
+            {
+                for (var outputIdx = 0; outputIdx < _hiddenToOutputWeights[0].Length; ++outputIdx)
+                {
+                    // calculate the new delta and update the weights
+                    var delta = learnRate * outputGradients[outputIdx] * _hiddenOutputs[hiddenIdx];
+                    _hiddenToOutputWeights[hiddenIdx][outputIdx] += delta;
+
+                    // add momentum using previous delta
+                    _hiddenToOutputWeights[hiddenIdx][outputIdx] += momentum * _hiddenToOutputPrevWeightsDelta[hiddenIdx][outputIdx];
+                    
+                    // save the delta for momentum
+                    _hiddenToOutputPrevWeightsDelta[hiddenIdx][outputIdx] = delta;
+                }
+            }
+
+            // update output biases
+            for (var outputIdx = 0; outputIdx < _outputBiases.Length; ++outputIdx)
+            {
+                // calculate the new dalta and update the bias
+                var delta = learnRate * outputGradients[outputIdx];
+                _outputBiases[outputIdx] += delta;
+
+                // add momentum using previous delta
+                _outputBiases[outputIdx] += momentum * _outputPrevBiasesDelta[outputIdx];
+
+                // save the delta for momentum
+                _outputPrevBiasesDelta[outputIdx] = delta;
             }
         }
 
@@ -306,16 +259,14 @@ namespace ClassifyHebLettersUsingBackProp
         public void Train(List<InputDataStructure> trainData, int maxEpochs, double learnRate, double momentum, double mseLimit)
         {
             var epoch = 0;
-
-            // create an indexes array
-            var sequence = new int[trainData.Count];
-            for (var i = 0; i < sequence.Length; ++i)
-                sequence[i] = i;
+            
+            // create indexed array
+            var sequence = HebLettersBackPropProgram.CreateIndexedArray(trainData.Count, shuffel:false);
 
             // while we didn't get to the epoch limit
             while (epoch < maxEpochs)
             {
-                Console.WriteLine("Starting epcoch number " + epoch);
+                if (epoch % 100 == 0) Console.WriteLine("Starting epcoch number " + epoch);
 
                 // calculate meanSquaredError on the training set to see that we are not over fitting
                 var mse = MeanSquaredError(trainData);
@@ -323,8 +274,8 @@ namespace ClassifyHebLettersUsingBackProp
                 // if we got to the desired mse, stop training
                 if (mse < mseLimit) break;
 
-                // visit each training data in random order
-                Shuffle(sequence); 
+                // run over the training data in random order
+                HebLettersBackPropProgram.Shuffle(sequence); 
 
                 // run over all the training data and update weights 
                 for (var i = 0; i < trainData.Count; ++i)
@@ -408,7 +359,7 @@ namespace ClassifyHebLettersUsingBackProp
                 var readlMaxIndex = MaxIndex(tValues);
 
                 if (printLetters) Console.WriteLine(dataStruct);
-                ;
+                
                 if (printEachLetterSummary)
                     Console.WriteLine("Computed NN value is :" + maxIndex +  ", Real target value is : " +  readlMaxIndex);
 
@@ -448,76 +399,6 @@ namespace ClassifyHebLettersUsingBackProp
             return (1 - SigmoidFunction(x))*SigmoidFunction(x);
         }
 
-        /// <summary>
-        /// Calculate and return the hyperTan function value of a double
-        /// </summary>
-        /// <param name="x">input value</param>
-        /// <returns>hyperTan return value of x</returns>
-        private static double HyperTanFunction(double x)
-        {
-            if (x < -20.0) return -1.0; // approximation is correct to 30 decimals
-            if (x > 20.0) return 1.0;
-            return Math.Tanh(x);
-        }
-
-        /// <summary>
-        /// Calculte and return the derviative of the hypertan function
-        /// </summary>
-        /// <param name="x">input value</param>
-        /// <param name="hyperTanOutput">true if the input value if already the output of the hyperTan function</param>
-        /// <returns>hyperTan derviative return falue of x</returns>
-        private static double HyperTanFunctionDerviative(double x, bool hyperTanOutput = false)
-        {
-            if (hyperTanOutput)
-                // derivative of tanh = (1 - y) * (1 + y)
-                return (1 - x) * (1 + x);
-
-            var hyperTanVal = HyperTanFunction(x);
-            return (1 - hyperTanVal)*(1 + hyperTanVal);
-        }
-
-        /// <summary>
-        /// Calculate and return the softmax values for a vector (better performance on a vector)
-        /// </summary>
-        /// <param name="sums">vector of linear summing</param>
-        /// <returns></returns>
-        private static double[] SoftmaxFunction(double[] sums)
-        {
-            // does all output nodes at once so scale doesn't have to be re-computed each time
-            // 1. determine max output sum
-            var max = sums[0];
-            for (var i = 0; i < sums.Length; ++i)
-                if (sums[i] > max) max = sums[i];
-
-            // 2. determine scaling factor -- sum of exp(each val - max)
-            var scale = 0.0;
-            for (var i = 0; i < sums.Length; ++i)
-                scale += Math.Exp(sums[i] - max);
-
-            var result = new double[sums.Length];
-            for (var i = 0; i < sums.Length; ++i)
-                result[i] = Math.Exp(sums[i] - max) / scale;
-
-            return result; // now scaled so that xi sum to 1.0
-        }
-
-        /// <summary>
-        /// Calculte and return the derviative of the softmax function
-        /// </summary>
-        /// <param name="x">input value</param>
-        /// <param name="softmaxOutput">true if the input value if already the output of the softmax function</param>
-        /// <returns>softmax derviative return falue of x</returns>
-        private static double SoftmaxFunctionDerviative(double x, bool softmaxOutput = false)
-        {
-            if (softmaxOutput)
-                // derviative of soft max is the same as log-sigmoid
-                return SigmoidFunctionDerviative(x, true);
-
-            // need to implement for the cases where the input value is not already a softmax output
-            throw new NotImplementedException();
-        }
-
-
         #endregion
 
         #region Helpers
@@ -528,11 +409,11 @@ namespace ClassifyHebLettersUsingBackProp
         /// <param name="rows">number of rows</param>
         /// <param name="cols">number of colums</param>
         /// <returns>the newly created matrix</returns>
-        private static double[][] MakeMatrix(int rows, int cols)
+        private static double[][] CreateMatrix(int rows, int cols)
         {
             var result = new double[rows][];
-            for (var r = 0; r < result.Length; ++r)
-                result[r] = new double[cols];
+            for (var rowIndex = 0; rowIndex < result.Length; ++rowIndex)
+                result[rowIndex] = new double[cols];
             return result;
         }
 
@@ -564,22 +445,6 @@ namespace ClassifyHebLettersUsingBackProp
             return largestIndex;
         }
 
-        /// <summary>
-        /// Shuffle the input index array
-        /// </summary>
-        /// <param name="indexArr">the index arr to shuffle</param>
-        private static void Shuffle(int[] indexArr)
-        {
-            for (var i = 0; i < indexArr.Length; ++i)
-            {
-                var r = _rnd.Next(i, indexArr.Length);
-                var tmp = indexArr[r];
-                indexArr[r] = indexArr[i];
-                indexArr[i] = tmp;
-            }
-        }
-
         #endregion
-
     }
 }
