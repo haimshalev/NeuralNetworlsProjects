@@ -1,4 +1,12 @@
-﻿using System;
+﻿/****************************************
+ * Neural Networks - Project No1 
+ * 
+ * ZahiKfir         200681476
+ * Haim Shalalevili 200832780
+ * Nadav Eichler    308027325
+ ***************************************/
+
+using System;
 using System.Drawing;
 using System.IO;
 using System.Text;
@@ -102,8 +110,7 @@ namespace ClassifyHebLettersUsingBackProp
                     Color pixelColor = bitmap.GetPixel(x, y);
 
                     // if the pixel is not white set the value of the neuron to 1
-                    if (pixelColor.A < PixelThreshold || pixelColor.B < PixelThreshold ||
-                        pixelColor.G < PixelThreshold)
+                    if (pixelColor.GetBrightness() < 0.8)
                         DataVector[y * 10 + x] = 1;
                 }
             }
