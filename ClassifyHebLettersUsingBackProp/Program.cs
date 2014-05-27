@@ -1,4 +1,12 @@
-﻿using System;
+﻿/****************************************
+ * Neural Networks - Project No1 
+ * 
+ * ZahiKfir         200681476
+ * Haim Shalalevili 200832780
+ * Nadav Eichler    308027325
+ ***************************************/
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -9,66 +17,90 @@ namespace ClassifyHebLettersUsingBackProp
         #region Static Properties
 
         // input letters directory
-        private const string LettersDirectoryPath = @"../../letters";
+        private const string LettersDirectoryPath = @"letters";
 
         // file types - for now using only png files
         private const string FileTypes = "*.PNG";
 
         // neural network structure
         const int NumInput = 100;
-        const int NumHidden = 200;
+        const int NumHidden = 100;
         const int NumOutput = 5;
 
         // training properties
         const int MaxEpochs = 3000;
         const double LearnRate = 0.01;
         const double Momentum = 0.001;
-        const double MseLimit = 0.020;
+        const double MseLimit = 0.05;
 
         #endregion
 
         private static void Main()
         {
             // create the vector db
-            var allData = CreateVectorsDb(printLetters: true);
-
-            Console.ReadLine();
+            var allData = CreateVectorsDb(printLetters: false);
 
             Console.WriteLine("\nBegin neural network classification and prediction");
             Console.WriteLine("target-representation is aleph = 1 0 0 0 0, beith = 0 1 0 0 0, giemel = 0 0 1 0 0, daled = 0 0 0 1 0, hei = 0 0 0 0 1");
-
-
-            Console.WriteLine("Seperation input data to 80% training and 20% test");
-            var trainData = new List<InputDataStructure>();
-            var testData = new List<InputDataStructure>();
-            MakeTrainTest(allData, trainData, testData);
-
-            // Create the neural network structure
-            Console.WriteLine("\nCreating a " + NumInput + "-input, " + 
-                              NumHidden + "-hidden, " +
-                              NumOutput + "-output neural network");
-            Console.WriteLine("Using logisitic sigmoid as activation functions on each layer");
-            var nn = new NeuralNetwork(NumInput, NumHidden, NumOutput);
-
-            // set the training properties and train the network on the training data
-            Console.WriteLine("\nSetting maxEpochs = " + MaxEpochs +
-                              ", learnRate = " + LearnRate + 
-                              ", momentum = " + Momentum + 
-                              ", mseLimit = " + MseLimit + " for stopping condition");
-            Console.WriteLine("Beginning training:\n");
-            nn.Train(trainData, MaxEpochs, LearnRate, Momentum, MseLimit);
-            Console.WriteLine("Training complete");
-
-            // get the accuracy over the training data
-            var trainAcc = nn.Accuracy(trainData, printEachLetterSummary: false, printLetters: false);
-            Console.WriteLine("\nAccuracy on training data = " + trainAcc.ToString("F4"));
-
-            // get the accuracy over the test data
-            var testAcc = nn.Accuracy(testData, printEachLetterSummary: true, printLetters: true);
-            Console.WriteLine("\nAccuracy on test data = " + testAcc.ToString("F4"));
+            
+            // Run 5 folds cross validation
+            CrossValidation(allData, 5);
 
             Console.WriteLine("\nEnd of program");
             Console.ReadLine();
+        }
+
+        /// <summary>
+        /// Run cross validation on the data 
+        /// </summary>
+        /// <param name="allData">data set</param>
+        /// <param name="numFolds">number of folds to perform</param>
+        private static void CrossValidation(List<InputDataStructure> allData, int numFolds)
+        {
+            double avgTrainAccuracy = 0;
+            double avgTestAccuracy = 0;
+
+            for (var foldIdx = 0; foldIdx < numFolds; foldIdx++)
+            {
+                Console.WriteLine("\n\nStarting Fold #" + foldIdx);
+
+                // Create the neural network structure
+                Console.WriteLine("\nCreating a " + NumInput + "-input, " +
+                                  NumHidden + "-hidden, " +
+                                  NumOutput + "-output neural network");
+                Console.WriteLine("Using logisitic sigmoid as activation functions on each layer");
+                var nn = new NeuralNetwork(NumInput, NumHidden, NumOutput);
+
+                // set the training properties and train the network on the training data
+                Console.WriteLine("\nSetting maxEpochs = " + MaxEpochs +
+                                  ", learnRate = " + LearnRate +
+                                  ", momentum = " + Momentum +
+                                  ", mseLimit = " + MseLimit + " for stopping condition");
+
+                Console.WriteLine("Seperation input data to 80% training and 20% test");
+                var trainData = new List<InputDataStructure>();
+                var testData = new List<InputDataStructure>();
+                //MakeTrainTest(allData, trainData, testData);
+                MakeTrainTest(allData, trainData, testData, foldIdx);
+
+                Console.WriteLine("Beginning training:\n");
+                nn.Train(trainData, MaxEpochs, LearnRate, Momentum, MseLimit);
+                Console.WriteLine("Training complete");
+
+                // get the accuracy over the training data
+                var trainAcc = nn.Accuracy(trainData, printEachLetterSummary: false);
+                Console.WriteLine("\nAccuracy on training data = " + trainAcc.ToString("F4"));
+
+                // get the accuracy over the test data
+                var testAcc = nn.Accuracy(testData, printEachLetterSummary:false);
+                Console.WriteLine("\nAccuracy on test data = " + testAcc.ToString("F4"));
+
+                avgTestAccuracy += testAcc;
+                avgTrainAccuracy += trainAcc;
+            }
+            
+            Console.WriteLine("\nAvgAccurracy on the training data =" + avgTrainAccuracy / numFolds);
+            Console.WriteLine("\nAvgAccurracy on the test data =" + avgTestAccuracy / numFolds);
         }
 
         /// <summary>
@@ -77,26 +109,15 @@ namespace ClassifyHebLettersUsingBackProp
         /// <param name="allData">input data set</param>
         /// <param name="trainData">output training set</param>
         /// <param name="testData">output testing set</param>
-        private static void MakeTrainTest(List<InputDataStructure> allData, List<InputDataStructure> trainData, List<InputDataStructure> testData)
+        /// <param name="foldIdx">cross validation fold index - used for choosing the data</param>
+        private static void MakeTrainTest(List<InputDataStructure> allData, List<InputDataStructure> trainData, List<InputDataStructure> testData, int foldIdx)
         {
-            if (allData == null) throw new ArgumentNullException("allData");
-
-            // split allData into 80% trainData and 20% testData
-            int sizeInput = allData.Count;
-
-            int i;
-
-            // create a random sequence of indexes
-            var sequence = CreateIndexedArray(allData.Count);
-            
-
-            // the first 80% of the objets go to training
-            for (i = 0; i < (int) (sizeInput*0.80); ++i) 
-                trainData.Add(allData[sequence[i]].GetCopy());
-            
-            // the last 20% used as test data
-            for (; i < sizeInput; ++i) 
-                testData.Add(allData[sequence[i]].GetCopy());
+            for (var i = 0; i < allData.Count; i++)
+            {
+                if (i%5 == foldIdx)
+                    testData.Add(allData[i].GetCopy());
+                else trainData.Add(allData[i].GetCopy());
+            }
         }
 
         /// <summary>
@@ -132,7 +153,6 @@ namespace ClassifyHebLettersUsingBackProp
 
             return sequence;
         }
-
 
         /// <summary>
         /// Creates and returns vector db from the input letters located in the input folder

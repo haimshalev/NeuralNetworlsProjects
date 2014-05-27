@@ -1,3 +1,11 @@
+/****************************************
+ * Neural Networks - Project No1 
+ * 
+ * ZahiKfir         200681476
+ * Haim Shalalevili 200832780
+ * Nadav Eichler    308027325
+ ***************************************/
+
 using System;
 using System.Collections.Generic;
 
@@ -174,6 +182,37 @@ namespace ClassifyHebLettersUsingBackProp
                 outputGradients[outputGradIdx] = SigmoidFunctionDerviative(_outputs[outputGradIdx], true)
                     * (tValues[outputGradIdx] - _outputs[outputGradIdx]);
 
+            // update hidden to output weights
+            for (var hiddenIdx = 0; hiddenIdx < _hiddenToOutputWeights.Length; ++hiddenIdx)
+            {
+                for (var outputIdx = 0; outputIdx < _hiddenToOutputWeights[0].Length; ++outputIdx)
+                {
+                    // calculate the new delta and update the weights
+                    var delta = learnRate * outputGradients[outputIdx] * _hiddenOutputs[hiddenIdx];
+                    _hiddenToOutputWeights[hiddenIdx][outputIdx] += delta;
+
+                    // add momentum using previous delta
+                    _hiddenToOutputWeights[hiddenIdx][outputIdx] += momentum * _hiddenToOutputPrevWeightsDelta[hiddenIdx][outputIdx];
+
+                    // save the delta for momentum
+                    _hiddenToOutputPrevWeightsDelta[hiddenIdx][outputIdx] = delta;
+                }
+            }
+
+            // update output biases
+            for (var outputIdx = 0; outputIdx < _outputBiases.Length; ++outputIdx)
+            {
+                // calculate the new dalta and update the bias
+                var delta = learnRate * outputGradients[outputIdx];
+                _outputBiases[outputIdx] += delta;
+
+                // add momentum using previous delta
+                _outputBiases[outputIdx] += momentum * _outputPrevBiasesDelta[outputIdx];
+
+                // save the delta for momentum
+                _outputPrevBiasesDelta[outputIdx] = delta;
+            }
+
             // calculate hidden gradients
             for (var hiddenGradIdx = 0; hiddenGradIdx < hiddenGradients.Length; ++hiddenGradIdx)
             {
@@ -216,36 +255,7 @@ namespace ClassifyHebLettersUsingBackProp
                 _hiddenPrevBiasesDelta[hiddenIdx] = delta;
             }
 
-            // update hidden to output weights
-            for (var hiddenIdx = 0; hiddenIdx < _hiddenToOutputWeights.Length; ++hiddenIdx)
-            {
-                for (var outputIdx = 0; outputIdx < _hiddenToOutputWeights[0].Length; ++outputIdx)
-                {
-                    // calculate the new delta and update the weights
-                    var delta = learnRate * outputGradients[outputIdx] * _hiddenOutputs[hiddenIdx];
-                    _hiddenToOutputWeights[hiddenIdx][outputIdx] += delta;
-
-                    // add momentum using previous delta
-                    _hiddenToOutputWeights[hiddenIdx][outputIdx] += momentum * _hiddenToOutputPrevWeightsDelta[hiddenIdx][outputIdx];
-                    
-                    // save the delta for momentum
-                    _hiddenToOutputPrevWeightsDelta[hiddenIdx][outputIdx] = delta;
-                }
-            }
-
-            // update output biases
-            for (var outputIdx = 0; outputIdx < _outputBiases.Length; ++outputIdx)
-            {
-                // calculate the new dalta and update the bias
-                var delta = learnRate * outputGradients[outputIdx];
-                _outputBiases[outputIdx] += delta;
-
-                // add momentum using previous delta
-                _outputBiases[outputIdx] += momentum * _outputPrevBiasesDelta[outputIdx];
-
-                // save the delta for momentum
-                _outputPrevBiasesDelta[outputIdx] = delta;
-            }
+            
         }
 
         /// <summary>
@@ -263,10 +273,12 @@ namespace ClassifyHebLettersUsingBackProp
             // create indexed array
             var sequence = HebLettersBackPropProgram.CreateIndexedArray(trainData.Count, shuffel:false);
 
+            Console.Write("Starting epoch number : ");
+
             // while we didn't get to the epoch limit
             while (epoch < maxEpochs)
             {
-                if (epoch % 100 == 0) Console.WriteLine("Starting epcoch number " + epoch);
+                if (epoch % 100 == 0) Console.Write(epoch+ " ");
 
                 // calculate meanSquaredError on the training set to see that we are not over fitting
                 var mse = MeanSquaredError(trainData);
@@ -298,6 +310,7 @@ namespace ClassifyHebLettersUsingBackProp
                 // increase the epoch number
                 ++epoch;
             }
+            Console.WriteLine();
         }
 
         /// <summary>
@@ -338,7 +351,7 @@ namespace ClassifyHebLettersUsingBackProp
         /// <param name="printEachLetterSummary">if true , prints each letter result and target</param>
         /// <param name="printLetters">if true print each letter to console</param>
         /// <returns>the precentage of the correct results</returns>
-        public double Accuracy(List<InputDataStructure> testData , bool printEachLetterSummary = false, bool printLetters = false)
+        public double Accuracy(List<InputDataStructure> testData , bool printEachLetterSummary = false)
         {
             var numCorrect = 0;
             
@@ -358,15 +371,16 @@ namespace ClassifyHebLettersUsingBackProp
                 var maxIndex = MaxIndex(yValues);
                 var readlMaxIndex = MaxIndex(tValues);
 
-                if (printLetters) Console.WriteLine(dataStruct);
-                
                 if (printEachLetterSummary)
+                {
+                    Console.WriteLine(dataStruct);
                     Console.WriteLine("Computed NN value is :" + maxIndex +  ", Real target value is : " +  readlMaxIndex);
+                }
 
                 // if the network retuned a corrrect output increase the counter
                 if (tValues[maxIndex].Equals(1.0)) ++numCorrect;
             }
-            
+
             // return the network accuracy on the specified data
             return testData.Count != 0 ? ((double)numCorrect) / testData.Count : 0;
         }
