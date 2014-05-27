@@ -1,4 +1,12 @@
-﻿using System;
+﻿/****************************************
+ * Neural Networks - Project No2 
+ * 
+ * ZahiKfir         200681476
+ * Haim Shalalevili 200832780
+ * Nadav Eichler    308027325
+ ***************************************/
+
+using System;
 using System.Linq;
 
 namespace BamPhoneNumbersFrom16BitIcons
