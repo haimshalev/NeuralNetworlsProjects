@@ -6,59 +6,52 @@
  * Nadav Eichler    308027325
  ***************************************/
 
-using System;
-using System.Globalization;
+using System.Collections.Generic;
+using BamPhoneNumbersFrom16BitIcons.ConvertAlgo;
 
 namespace BamPhoneNumbersFrom16BitIcons
 {
-    class BamNetworkPhoneToIconsWrapper
+    public class BamNetworkPhoneToIconsWrapper
     {
-        // 4 bits is enough for representing 10 numbers
-        private const int BitsForDigit = 4;
-
         #region Properties
-        
-            private string[] _phoneNumbers;
-            private int[][] _biPolarPhoneNumbers;
-            private int[][] _inputIcons;
-            private int[][] _biPolarIcons;
-
-            private int _numberInputNeurons;
-            private int _numberOutputNeurons;
-
-            private readonly BamNeuralNetwork _bamNeuralNetwork; 
+       
+        private readonly BamNeuralNetwork _bamNeuralNetwork;
+        private readonly IPhoneNumberToBiPolarConvertor _phoneNumberToBiPolarConvertor = new PhoneNumberToBiPolarConvertorHuffmanCode(new BinaryToBiPolarVecConvertor());
+        private readonly IBinaryToBiPolarVecConvertor _binaryToBiPolarVecConvertor = new BinaryToBiPolarVecConvertor();
 
         #endregion
 
         /// <summary>
         /// Cto'r
         /// </summary>
-        /// <param name="icons">a list of icons to add to add to the network</param>
-        /// <param name="phoneNumbers">a list of phone numbers to add to the network</param>
-        public BamNetworkPhoneToIconsWrapper(int[][] icons, string[] phoneNumbers)
+        public BamNetworkPhoneToIconsWrapper(IEnumerable<IconInputDataStructure> db)
         {
-            //Some sanity checks
-            if (icons == null || phoneNumbers == null || icons[0] == null || phoneNumbers[0] == null)
-                throw new ArgumentException("input vectors must contain values");
-
-            // store the input associations
-            _inputIcons = icons;
-            _phoneNumbers = phoneNumbers;
-
-            // convert the associations to biPolar format
-            _biPolarPhoneNumbers = ConvertStringPhoneNumbersToBiPolar(phoneNumbers);
-            _biPolarIcons = Convert16BitIconsToBiPolar(icons);
-
-            // set the size of the inner neural network
-            _numberInputNeurons = _biPolarIcons[0].Length;
-            _numberOutputNeurons = _biPolarPhoneNumbers[0].Length;
-
-            // Create the BAM neural network
-            _bamNeuralNetwork = new BamNeuralNetwork(_numberInputNeurons, _numberOutputNeurons);
-
             // add the associations to the network
-            for (var i = 0; i < _biPolarIcons.Length; i++)
-                _bamNeuralNetwork.AddAssociation(_biPolarIcons[i], _biPolarPhoneNumbers[i]);
+            foreach (var iconInputDataStructure in db)
+            {
+                var biPolarIcon = _binaryToBiPolarVecConvertor.ConvertBinaryVecToBiPolar(iconInputDataStructure.IconVector);
+                var biPolarPhoneNumber = _phoneNumberToBiPolarConvertor.ConvertStringPhoneNumberToBiPolar(iconInputDataStructure.PhoneNumber);
+
+                // Create the BAM neural network
+                if (_bamNeuralNetwork == null)
+                    _bamNeuralNetwork = new BamNeuralNetwork(biPolarIcon.Length, biPolarPhoneNumber.Length);    
+
+                _bamNeuralNetwork.AddAssociation(biPolarIcon, biPolarPhoneNumber);
+            }
+        }
+
+        /// <summary>
+        /// Associates the input icon data structure to an icon which the networks belives in
+        /// </summary>
+        /// <param name="iconInputDataStructure">input icon</param>
+        /// <returns>icon shich the network believes in</returns>
+        public IconInputDataStructure Associate(IconInputDataStructure iconInputDataStructure)
+        {
+            var testVector = iconInputDataStructure.IconVector;
+            var outputNumber = iconInputDataStructure.PhoneNumber;
+
+            // Associate the new test vectors
+            return Associate(testVector, outputNumber);
         }
 
         /// <summary>
@@ -66,190 +59,19 @@ namespace BamPhoneNumbersFrom16BitIcons
         /// </summary>
         /// <param name="icon">16 bit icon</param>
         /// <param name="phoneNumber">string phone number</param>
-        public void Associate(ref int[] icon, ref string phoneNumber)
+        public IconInputDataStructure Associate(int[] icon, string phoneNumber)
         {
-            var biPolarIcon = Convert16BitIconToBiPolar(icon);
-            var biPolarPhoneNumber = ConvertStringPhoneNumberToBiPolar(phoneNumber);
+            var biPolarIcon = _binaryToBiPolarVecConvertor.ConvertBinaryVecToBiPolar(icon);
+            var biPolarPhoneNumber = _phoneNumberToBiPolarConvertor.ConvertStringPhoneNumberToBiPolar(phoneNumber);
 
             // convert the input arguments to biPolar and run associate
-            Associate(biPolarIcon, biPolarPhoneNumber);
-
-            phoneNumber = ConvertBiPolarPhoneNumberToString(biPolarPhoneNumber);
-            icon = Convert16BitBiPolarIconToBinary(biPolarIcon);
-        }
-
-        /// <summary>
-        /// Associates the 2 vectors into an association which the network learned
-        /// </summary>
-        /// <param name="biPolarIcon">biPolar format of an icon</param>
-        /// <param name="biPolarPhoneNumber">biPolar format of a phoneNumber</param>
-        public void Associate(int[] biPolarIcon, int[] biPolarPhoneNumber)
-        {
             _bamNeuralNetwork.Associate(biPolarIcon, biPolarPhoneNumber);
+
+            phoneNumber = _phoneNumberToBiPolarConvertor.ConvertBiPolarPhoneNumberToString(biPolarPhoneNumber);
+            icon = _binaryToBiPolarVecConvertor.ConvertBiPolarVecToBinary(biPolarIcon);
+
+            return new IconInputDataStructure(icon, phoneNumber);
         }
 
-        #region Convert Methods
-
-            /// <summary>
-            /// Convert the string phone numbers into a biPolar format
-            /// </summary>
-            /// <param name="phoneNumbers">string array of phone numbers</param>
-            /// <returns>a biPolar phoneNumber array</returns>
-            public static int[][] ConvertStringPhoneNumbersToBiPolar(string[] phoneNumbers)
-            {
-                // initialize a new biPolar phonenumber list
-                var biPolarPhoneNumbers = new int[phoneNumbers.Length][];
-
-                // for each icon in the input argument 
-                for (var i = 0; i < phoneNumbers.Length; i++)
-                {
-                    // add it to the icon list
-                    biPolarPhoneNumbers[i] = ConvertStringPhoneNumberToBiPolar(phoneNumbers[i]);
-                }
-
-                return biPolarPhoneNumbers;
-            }
-
-            /// <summary>
-            /// Convert a string phone number to biPolar format
-            /// </summary>
-            /// <param name="phoneNumber">input phone number</param>
-            /// <returns>a bi Polar format of the phone number</returns>
-            private static int[] ConvertStringPhoneNumberToBiPolar(string phoneNumber)
-            {
-                // initialize a binary buffer
-                var binaryBuffer = new int[phoneNumber.Length * BitsForDigit];
-
-                var i = 0;
-
-                // for each digit , convert it to binary
-                foreach (var digit in phoneNumber)
-                {
-                    // parse the digit to number
-                    var x = int.Parse(digit.ToString(CultureInfo.InvariantCulture));
-
-                    i += BitsForDigit;
-                    var iteration = 1;
-
-                    // add the ones where needed
-                    while (x != 0)
-                    {
-                        if ((x & 1) == 1)
-                            binaryBuffer[i - iteration] = 1;
-
-                        x >>= 1;
-                        iteration++;
-                    }
-
-                }
-
-                // return the biPolar Representation
-                return Convert16BitIconToBiPolar(binaryBuffer);
-            }
-
-            /// <summary>
-            /// Convert the bi Polar based phoneNumber to string
-            /// </summary>
-            /// <param name="biPolarPhoneNumber">biPolar PhoneNumber</param>
-            /// <returns>string representation of the phone number</returns>
-            public static string ConvertBiPolarPhoneNumberToString(int[] biPolarPhoneNumber)
-            {
-                // get the binary representation
-                var binaryBuffer = Convert16BitBiPolarIconToBinary(biPolarPhoneNumber);
-
-                var phoneNumber = "";
-
-                // convert the binary buffer to string
-                for (var i = 0; i < binaryBuffer.Length; i += BitsForDigit)
-                {
-                    int digit = 0;
-
-                    for (var j = BitsForDigit - 1; j >= 0; j--)
-                        digit += binaryBuffer[i + j] * (int)(Math.Pow(2, BitsForDigit - 1 - j));
-
-                    phoneNumber += digit;
-                }
-
-                return phoneNumber;
-
-            }
-
-            /// <summary>
-            /// Convert the boolean icons into a biPolar format
-            /// </summary>
-            /// <param name="icons">16 bit arrays of 1 and 0</param>
-            /// <returns>a biPolar icons array</returns>
-            public static int[][] Convert16BitIconsToBiPolar(int[][] icons)
-            {
-                // initialize a new biPolar icons list
-                var biPolarIcons = new int[icons.Length][];
-
-                // for each icon in the input argument 
-                for (var i = 0; i < icons.Length; i++)
-                {
-                    // add it to the icon list
-                    biPolarIcons[i] = Convert16BitIconToBiPolar(icons[i]);
-                }
-
-                return biPolarIcons;
-            }
-
-            /// <summary>
-            /// Convert the boolean binaryt based icon to biPolar format
-            /// </summary>
-            /// <param name="icon">input binary icon</param>
-            /// <returns>a biPolar icon</returns>
-            public static int[] Convert16BitIconToBiPolar(int[] icon)
-            {
-                // initialize the biPolar buffer
-                var biPolarBuffer = new int[icon.Length];
-
-                for (var i = 0; i < icon.Length; i++)
-                {
-                    switch (icon[i])
-                    {
-                        case 1:
-                            biPolarBuffer[i] = 1;
-                            break;
-                        case 0:
-                            biPolarBuffer[i] = -1;
-                            break;
-                        default:
-                            throw new Exception("the icon has wrong bit value");
-                    }
-                }
-
-                return biPolarBuffer;
-            }
-
-            /// <summary>
-            /// Convert the biPolar based icon to binary format
-            /// </summary>
-            /// <param name="biPolarIcon">biPolar icon</param>
-            /// <returns>a binary icon</returns>
-            public static int[] Convert16BitBiPolarIconToBinary(int[] biPolarIcon)
-            {
-                // initialize the biPolar buffer
-                var binaryBuffer = new int[biPolarIcon.Length];
-
-                for (var i = 0; i < biPolarIcon.Length; i++)
-                {
-                    switch (biPolarIcon[i])
-                    {
-                        case 1:
-                            binaryBuffer[i] = 1;
-                            break;
-                        case -1:
-                            binaryBuffer[i] = 0;
-                            break;
-                        default:
-                            throw new Exception("the icon has wrong bit value");
-                    }
-                }
-
-                return binaryBuffer;
-            }
-
-        #endregion
     }
 }

@@ -74,20 +74,6 @@ namespace BamPhoneNumbersFrom16BitIcons
         }
 
         /// <summary>
-        /// output the transformation matrix (weight matrix) to the console
-        /// </summary>
-        public void PrintTransformationMatrix()
-        {
-            Console.WriteLine("The transformation matrix:");
-            for (var i = 0; i < _numberOfInputNeurons; i++)
-            {
-                for (var j = 0; j < _numberOfOutputNeurons; j++)
-                    Console.Write(_transformationMatrix[i][j] + " ");
-                Console.WriteLine();
-            }
-        }
-
-        /// <summary>
         /// Associate the input vector to one of the stored associations
         /// </summary>
         /// <param name="input">the input vector to associate</param>
@@ -104,6 +90,9 @@ namespace BamPhoneNumbersFrom16BitIcons
                 isForwardStable = PropagateLayer(_transformationMatrix, input, output);
                 isBackwardStable = PropagateLayer(_transformationMatrixReverse, output, input);
             }
+
+            PropagateLayer(_transformationMatrix, input, output);
+            PropagateLayer(_transformationMatrixReverse, output, input);
         }
 
         /// <summary>
