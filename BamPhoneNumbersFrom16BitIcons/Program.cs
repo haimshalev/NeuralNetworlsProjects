@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using BamPhoneNumbersFrom16BitIcons.ConvertAlgo;
 
 namespace BamPhoneNumbersFrom16BitIcons
 {
@@ -43,13 +44,15 @@ namespace BamPhoneNumbersFrom16BitIcons
             #endregion
 
             // initialize the BAM neural network wrapper
-            var bamNeuralNetworkWrapper = new BamNetworkPhoneToIconsWrapper(db);
+            var bamNeuralNetworkWrapper = new BamNetworkPhoneToIconsWrapper(db,
+                new PhoneNumberToBiPolarConvertorHuffmanCode(new BinaryToBiPolarVecConvertor()), 
+                new BinaryToBiPolarVecConvertor());
 
             Console.WriteLine("Test BAM Network : \n");
-            
-            TestInputIcons(db, bamNeuralNetworkWrapper);
-            TestInputIconsWithPrecentError(db, bamNeuralNetworkWrapper, 20);
-            TestInputIconsWithPrecentError(db, bamNeuralNetworkWrapper, 50);
+
+            TestInputIconsWithErrorPerentage(db, bamNeuralNetworkWrapper,  0 ,1);
+            TestInputIconsWithErrorPerentage(db, bamNeuralNetworkWrapper, 20, 5);
+            TestInputIconsWithErrorPerentage(db, bamNeuralNetworkWrapper, 50, 5);
         }
 
         /// <summary>
@@ -70,27 +73,8 @@ namespace BamPhoneNumbersFrom16BitIcons
             return fileEntries.Select(fileEntry => new IconInputDataStructure(fileEntry, phoneNumbers[i++])).ToList();
         }
 
-        #region TestMethods
-
-        private static void TestInputIcons(IEnumerable<IconInputDataStructure> db, BamNetworkPhoneToIconsWrapper bamNeuralNetworkWrapper)
-        {
-            Console.WriteLine("Test exactly the input icons:  ");
-
-            // check all the input icons
-            foreach (var iconInputDataStructure in db)
-            {
-                Console.ReadKey();
-                Console.WriteLine("\tInputIcon: ");
-                Console.WriteLine(iconInputDataStructure.ToString(2));
-
-                // output results
-                Console.WriteLine("\tOutputIcon:");
-                Console.WriteLine( bamNeuralNetworkWrapper.Associate(iconInputDataStructure).ToString(2));
-            }
-        }
-
-        private static void TestInputIconsWithPrecentError(IEnumerable<IconInputDataStructure> db,
-            BamNetworkPhoneToIconsWrapper bamNeuralNetworkWrapper, int errorPercentage)
+        private static void TestInputIconsWithErrorPerentage(IEnumerable<IconInputDataStructure> db,
+            BamNetworkPhoneToIconsWrapper bamNeuralNetworkWrapper, int errorPercentage, int numberOfTests)
         {
             Console.WriteLine("Test the input icons with " + errorPercentage + "% random Error");
 
@@ -101,8 +85,8 @@ namespace BamPhoneNumbersFrom16BitIcons
                 Console.WriteLine("\tInputIcon: ");
                 Console.WriteLine(iconInputDataStructure.ToString(2));
 
-                // create 5 random 20% error icons and test the result
-                for (var i = 0; i < 5; i++)
+                // create random error icons and test the result
+                for (var i = 0; i < numberOfTests; i++)
                 {
                     Console.ReadKey();
                     Console.WriteLine("\t\t" + errorPercentage +  "% random error icon:");
@@ -116,7 +100,6 @@ namespace BamPhoneNumbersFrom16BitIcons
             }
         }
 
-        #endregion
     }
 }
 

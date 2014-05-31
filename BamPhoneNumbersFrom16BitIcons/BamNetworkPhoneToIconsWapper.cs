@@ -16,16 +16,21 @@ namespace BamPhoneNumbersFrom16BitIcons
         #region Properties
        
         private readonly BamNeuralNetwork _bamNeuralNetwork;
-        private readonly IPhoneNumberToBiPolarConvertor _phoneNumberToBiPolarConvertor = new PhoneNumberToBiPolarConvertorHuffmanCode(new BinaryToBiPolarVecConvertor());
-        private readonly IBinaryToBiPolarVecConvertor _binaryToBiPolarVecConvertor = new BinaryToBiPolarVecConvertor();
+        private readonly IPhoneNumberToBiPolarConvertor _phoneNumberToBiPolarConvertor;
+        private readonly IBinaryToBiPolarVecConvertor _binaryToBiPolarVecConvertor;
 
         #endregion
 
         /// <summary>
         /// Cto'r
         /// </summary>
-        public BamNetworkPhoneToIconsWrapper(IEnumerable<IconInputDataStructure> db)
+        public BamNetworkPhoneToIconsWrapper(IEnumerable<IconInputDataStructure> db, 
+            IPhoneNumberToBiPolarConvertor phoneNumberToBiPolarConvertor,
+            IBinaryToBiPolarVecConvertor binaryToBiPolarVecConvertor)
         {
+            _phoneNumberToBiPolarConvertor = phoneNumberToBiPolarConvertor;
+            _binaryToBiPolarVecConvertor = binaryToBiPolarVecConvertor;
+
             // add the associations to the network
             foreach (var iconInputDataStructure in db)
             {
@@ -47,28 +52,14 @@ namespace BamPhoneNumbersFrom16BitIcons
         /// <returns>icon shich the network believes in</returns>
         public IconInputDataStructure Associate(IconInputDataStructure iconInputDataStructure)
         {
-            var testVector = iconInputDataStructure.IconVector;
-            var outputNumber = iconInputDataStructure.PhoneNumber;
-
-            // Associate the new test vectors
-            return Associate(testVector, outputNumber);
-        }
-
-        /// <summary>
-        /// Associates the 2 vectors into an association which the network learned
-        /// </summary>
-        /// <param name="icon">16 bit icon</param>
-        /// <param name="phoneNumber">string phone number</param>
-        public IconInputDataStructure Associate(int[] icon, string phoneNumber)
-        {
-            var biPolarIcon = _binaryToBiPolarVecConvertor.ConvertBinaryVecToBiPolar(icon);
-            var biPolarPhoneNumber = _phoneNumberToBiPolarConvertor.ConvertStringPhoneNumberToBiPolar(phoneNumber);
+            var biPolarIcon = _binaryToBiPolarVecConvertor.ConvertBinaryVecToBiPolar(iconInputDataStructure.IconVector);
+            var biPolarPhoneNumber = _phoneNumberToBiPolarConvertor.ConvertStringPhoneNumberToBiPolar(iconInputDataStructure.PhoneNumber);
 
             // convert the input arguments to biPolar and run associate
             _bamNeuralNetwork.Associate(biPolarIcon, biPolarPhoneNumber);
 
-            phoneNumber = _phoneNumberToBiPolarConvertor.ConvertBiPolarPhoneNumberToString(biPolarPhoneNumber);
-            icon = _binaryToBiPolarVecConvertor.ConvertBiPolarVecToBinary(biPolarIcon);
+            var phoneNumber = _phoneNumberToBiPolarConvertor.ConvertBiPolarPhoneNumberToString(biPolarPhoneNumber);
+            var icon = _binaryToBiPolarVecConvertor.ConvertBiPolarVecToBinary(biPolarIcon);
 
             return new IconInputDataStructure(icon, phoneNumber);
         }
