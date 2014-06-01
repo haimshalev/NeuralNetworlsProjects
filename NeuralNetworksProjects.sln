@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BamPhoneNumbersFrom16BitIco
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestsProject", "TestsProject\TestsProject.csproj", "{DED399AF-9B0F-4724-AB4B-79ADCD680FFB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SelfOrgenizedMap", "SelfOrgenizedMap\SelfOrgenizedMap.csproj", "{20305D2A-F6C3-4C53-887E-A6C5213EE812}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{DED399AF-9B0F-4724-AB4B-79ADCD680FFB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DED399AF-9B0F-4724-AB4B-79ADCD680FFB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DED399AF-9B0F-4724-AB4B-79ADCD680FFB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{20305D2A-F6C3-4C53-887E-A6C5213EE812}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{20305D2A-F6C3-4C53-887E-A6C5213EE812}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{20305D2A-F6C3-4C53-887E-A6C5213EE812}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{20305D2A-F6C3-4C53-887E-A6C5213EE812}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
