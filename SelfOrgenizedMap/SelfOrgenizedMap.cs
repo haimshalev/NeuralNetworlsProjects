@@ -167,13 +167,15 @@ namespace SelfOrgenizedMapNamespace
         /// <param name="chosenNeuronIdx"></param>
         private void UpdateBiases(int chosenNeuronIdx)
         {
-            const double biasChangeRate = 1;
+            const double biasChangeRate = 10;
 
-            for (int i = 0; i < _biases.Length; i++)
-            {
-                if (i != chosenNeuronIdx && _biases[i] != 0) _biases[i] -= biasChangeRate;
-                else _biases[i] += biasChangeRate;
-            }
+            _biases[chosenNeuronIdx] += biasChangeRate;
+
+            //for (int i = 0; i < _biases.Length; i++)
+            //{
+            //    if (i != chosenNeuronIdx && _biases[i] != 0) _biases[i] -= biasChangeRate;
+            //    else _biases[i] += biasChangeRate;
+            //}
         }
 
         /// <summary>

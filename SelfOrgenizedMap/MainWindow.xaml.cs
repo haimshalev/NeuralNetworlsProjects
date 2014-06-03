@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Threading;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Shapes;
 
@@ -80,7 +81,7 @@ namespace SelfOrgenizedMapNamespace
 
             if (!Dispatcher.CheckAccess())
             {
-                Thread.Sleep(1000);
+                Thread.Sleep(500);
 
                 // we were called on a worker thread
                 // marshal the call to the user interface thread
@@ -156,8 +157,6 @@ namespace SelfOrgenizedMapNamespace
         /// <summary>
         /// Som neural network, line of neurons topology, non uniform density data
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
         private void NonUniformStartButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
             var rand = new Random();
@@ -176,6 +175,34 @@ namespace SelfOrgenizedMapNamespace
             var selfOrgenizedMap = new SelfOrgnizedMap<LineTopology>(2, int.Parse(SetNumOfClasters.Text), this);
 
             StartWorking(data, selfOrgenizedMap);
+        }
+
+        /// <summary>
+        /// Som neural network, circle of neurons topology, torus data
+        /// </summary>
+        private void TorusStartButton_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            // prepare the data - create a torus 
+            var data = new List<double[]>();
+
+            const int R = 40;
+            const int r = 10;
+            for (var i = 0; i < 360; i = i + 3)
+                for (var j = 0; j < 360; j = j +3)
+                {
+                    double radians1 = i/(180/Math.PI);
+                    double radians2 = j/(180/Math.PI);
+                    double x = (R + r * Math.Cos(radians1)) * Math.Cos(radians2);
+                    double y = (R + r * Math.Cos(radians1)) * Math.Sin(radians2);
+
+                    data.Add(new []{x + 50 ,y + 50});
+                }
+
+
+            // Initialize Self Orgenized map 
+            var selfOrgenizedMap = new SelfOrgnizedMap<CircleTopology>(2, int.Parse(SetNumOfClasters.Text), this);
+
+            StartWorking(data.ToArray(), selfOrgenizedMap);
         }
     }
 }
