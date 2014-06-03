@@ -1,8 +1,18 @@
-﻿<Window x:Class="SelfOrgenizedMap.MainWindow"
+﻿<Window
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="MainWindow" Height="100" Width="100">
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="d" x:Class="SelfOrgenizedMap.MainWindow"
+        Title="MainWindow" Height="199" Width="372">
     <Grid>
-        <Canvas Name="MainCanvas" HorizontalAlignment="Left" Height="100" Margin="0,0,0,0" VerticalAlignment="Top" Width="100"/>
+        <Canvas x:Name="MainCanvas" HorizontalAlignment="Left" Height="100" Margin="0,0,0,0" VerticalAlignment="Top" Width="100" Background="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}"/>
+        <Label Content="EpochNum:" HorizontalAlignment="Left" Margin="138,41,0,0" VerticalAlignment="Top"/>
+        <Label Content="LearnRate:" HorizontalAlignment="Left" Margin="138,67,0,0" VerticalAlignment="Top"/>
+        <TextBlock HorizontalAlignment="Left" Margin="236,214,0,-16" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top"/>
+        <TextBlock HorizontalAlignment="Left" Margin="224,48,0,0" TextWrapping="Wrap" Name="EpochNum" Text="" VerticalAlignment="Top"/>
+        <TextBlock HorizontalAlignment="Left" Margin="224,72,0,0" TextWrapping="Wrap" Name="LearnRate"  Text="" VerticalAlignment="Top"/>
+        <Button x:Name="UnifromStartButton" Height="19" Margin="0,100,0,0" VerticalAlignment="Top" Content="Start Uniform Check" Click="UnifromStartButton_Click"/>
+        <Button x:Name="NonUniformStartButton" Height="19" Margin="0,119,0,0" VerticalAlignment="Top" Content="Start Non Uniform Check" Click="NonUniformStartButton_Click" />
+        <TextBox Name="SetNumEpoches" ToolTip="Set the number of epoches" HorizontalAlignment="Left" Height="23" Margin="115,10,0,0" TextWrapping="Wrap" Text="100" VerticalAlignment="Top" Width="49"/>
+        <TextBox Name="SetRefreshRate" ToolTip="Set when to refresh the main canvas" HorizontalAlignment="Left" Height="23" Margin="184,10,0,0" TextWrapping="Wrap" Text="5" VerticalAlignment="Top" Width="40"/>
     </Grid>
 </Window>
