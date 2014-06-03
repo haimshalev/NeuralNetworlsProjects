@@ -1,21 +1,22 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Threading;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
 
-namespace SelfOrgenizedMap
+namespace SelfOrgenizedMapNamespace
 {
 
-    public delegate void UpdateGuiDelegate(double[][] weights, double learnRate, int epoch);
+    public delegate void UpdateGuiDelegate(double[][] weights, List<KeyValuePair<int, int>> neighborhoodList, double learnRate, int epoch, int iterationNum);
 
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
     public partial class MainWindow
     {
-        private SelfOrgnizedMap _selfOrgenizedMap;
+        private SelfOrgenizedMap _selfOrgenizedMap;
         private double[][] _data;
         private Thread _workingThread;
 
@@ -67,19 +68,24 @@ namespace SelfOrgenizedMap
         }
 
         /// <summary>
-        /// 
+        /// update the ui with the information about the current state
         /// </summary>
-        /// <param name="weights"></param>
-        /// <param name="learnRate"></param>
-        /// <param name="epochNum"></param>
-        internal void UpdateWindow(double[][] weights, double learnRate, int epochNum)
+        /// <param name="weights">current nn weights (kohonen neuron location)</param>
+        /// <param name="neighborhoodList">list of neighboors acording to the net topology</param>
+        /// <param name="learnRate">current learn rate</param>
+        /// <param name="epochNum">current epoch round</param>
+        /// <param name="iterationNum">current learning iteration</param>
+        internal void UpdateWindow(double[][] weights, List<KeyValuePair<int, int>>neighborhoodList, double learnRate, int epochNum, int iterationNum)
         {
+
             if (!Dispatcher.CheckAccess())
             {
+                Thread.Sleep(1000);
+
                 // we were called on a worker thread
                 // marshal the call to the user interface thread
                 Dispatcher.Invoke(new UpdateGuiDelegate(UpdateWindow),
-                            new object[] { weights, learnRate, epochNum});
+                            new object[] { weights, neighborhoodList, learnRate, epochNum, iterationNum});
                 return;
             }
 
@@ -95,12 +101,13 @@ namespace SelfOrgenizedMap
                 DrawPointOnCanvas(w, Colors.Black, 3);
 
             // Draw the lines between neurons
-            for (var i = 0; i < weights.Length - 1; i++)
-                DrawLineOnCanvas(weights[i], weights[i + 1], Brushes.Navy, 1);
+            foreach (var keyValuePair in neighborhoodList)
+                DrawLineOnCanvas(weights[keyValuePair.Key], weights[keyValuePair.Value], Brushes.Navy, 1);
 
             // update the labels
             LearnRate.Text = learnRate.ToString(CultureInfo.InvariantCulture);
             EpochNum.Text = epochNum.ToString(CultureInfo.InvariantCulture);
+            IterationNum.Text = iterationNum.ToString(CultureInfo.InvariantCulture);
         }
 
         /// <summary>
@@ -108,7 +115,7 @@ namespace SelfOrgenizedMap
         /// </summary>
         /// <param name="data">the data to learn</param>
         /// <param name="nn">the SelfOrgenizedMap instance</param>
-        private void StartWorking(double[][] data, SelfOrgnizedMap nn)
+        private void StartWorking(double[][] data, SelfOrgenizedMap nn)
         {
             if (_workingThread != null) _workingThread.Abort();
 
@@ -141,7 +148,7 @@ namespace SelfOrgenizedMap
                 }
 
             // Initialize Self Orgenized map 
-            var selfOrgenizedMap = new SelfOrgnizedMap(inputDimension: 2, numberOfClusters: 100, window: this);
+            var selfOrgenizedMap = new SelfOrgnizedMap<LineTopology>(2, int.Parse(SetNumOfClasters.Text), this);
 
             StartWorking(data, selfOrgenizedMap);
         }
@@ -166,7 +173,7 @@ namespace SelfOrgenizedMap
                 }
 
             // Initialize Self Orgenized map 
-            var selfOrgenizedMap = new SelfOrgnizedMap(inputDimension: 2, numberOfClusters: 100, window: this);
+            var selfOrgenizedMap = new SelfOrgnizedMap<LineTopology>(2, int.Parse(SetNumOfClasters.Text), this);
 
             StartWorking(data, selfOrgenizedMap);
         }

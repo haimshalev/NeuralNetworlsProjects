@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Linq;
 
-namespace SelfOrgenizedMap
+namespace SelfOrgenizedMapNamespace
 {
     /// <summary>
-    /// A self organizing map neural network.
+    /// base class for the selfOrgenizedMap
     /// </summary>
-    [Serializable]
-    public class SelfOrgnizedMap 
+    public abstract class SelfOrgenizedMap
     {
         #region Properties
 
@@ -15,27 +14,27 @@ namespace SelfOrgenizedMap
         /// The weights of the output set to the coordinates of each neuron
         /// neurons.
         /// </summary>
-        private readonly double[][] _weights;
+        protected double[][] _weights;
 
         /// <summary>
         /// the biases for each neuron - used for not selecting the same neuron all the time
         /// </summary>
-        private readonly double[] _biases;
+        protected double[] _biases;
 
         /// <summary>
         /// the dimension of each datapoint
         /// </summary>
-        private readonly int _inputDimension;
+        protected int _inputDimension;
 
         /// <summary>
         /// the number of Kohonen neurons (number of clasters)
         /// </summary>
-        private readonly int _outputNeuronsCount;
+        protected int _outputNeuronsCount;
 
         /// <summary>
         /// UI window - used for updating the GUI
         /// </summary>
-        private readonly MainWindow _mainWindow;
+        protected MainWindow _mainWindow;
 
         /// <summary>
         /// data to claster
@@ -50,9 +49,26 @@ namespace SelfOrgenizedMap
         /// <summary>
         /// main window canvas refresh rate
         /// </summary>
-        public int MainWindowRefreshRate; 
+        public int MainWindowRefreshRate;
 
         #endregion
+
+        /// <summary>
+        /// Start learning the input data and update the main window 
+        /// </summary>
+        public abstract void Learn();
+    }
+
+    /// <summary>
+    /// A topology generic self organizing map neural network
+    /// </summary>
+    public class SelfOrgnizedMap<T> : SelfOrgenizedMap
+        where T : Topology , new()
+    {
+        /// <summary>
+        /// the Kohonen layer topology
+        /// </summary>
+        private readonly Topology _topology;
 
         /// <summary>
         /// The constructor.
@@ -60,10 +76,13 @@ namespace SelfOrgenizedMap
         /// <param name="inputDimension">Number of input neurons</param>
         /// <param name="numberOfClusters">Number of output neurons</param>
         /// <param name="window">the gui window to notify</param>
-        public SelfOrgnizedMap(int inputDimension, int numberOfClusters, MainWindow window)
+        public SelfOrgnizedMap(int inputDimension, int numberOfClusters, MainWindow window) 
         {
             _inputDimension = inputDimension;
             _outputNeuronsCount = numberOfClusters;
+            
+            _topology = new T();
+            _topology.InitializeTopology(numberOfClusters);
 
             _mainWindow = window;
 
@@ -79,25 +98,25 @@ namespace SelfOrgenizedMap
         /// <summary>
         /// Start learning the input data and update the main window 
         /// </summary>
-        public void Learn()
+        public override void Learn()
         {
             var rand = new Random(DateTime.Now.Millisecond);
-            double learnRate = 1;
+            var iteration = 0;
 
             // start learning - on every epoch we go over all the points in the train data
             for (int i = 0; i < NumEpoches; i++)
             {
-                // update the gui if necessery
-                if (i % MainWindowRefreshRate== 0)
-                    _mainWindow.UpdateWindow(_weights, learnRate, i);
-
-                // decrease the learn rate
-                learnRate = 1 - ((double)i/NumEpoches);
-                
                 // run over all the input data randomly
                 var alldata = Data.ToList();
                 while (alldata.Count != 0)
                 {
+                    // decrease the learn rate
+                    double learnRate = 1 - ((double)iteration / (NumEpoches * Data.Length));
+
+                    // update the gui if necessery
+                    if (iteration % MainWindowRefreshRate == 0)
+                        _mainWindow.UpdateWindow(_weights, _topology.GetNeigborhoodPairs(), learnRate, i, iteration);
+
                     var input = alldata.ElementAt(rand.Next(alldata.Count));
                     alldata.Remove(input);
 
@@ -108,13 +127,14 @@ namespace SelfOrgenizedMap
                     UpdateBiases(neuronIdx);
 
                     // change the neuron location by updating it's weights to be closer to the chosen input
-                    for (var cluster = 0; cluster < _outputNeuronsCount; cluster++)
-                        for (int j = 0; j < _inputDimension; j++)
-                            ModifyWights(cluster, input, neuronIdx, learnRate);
+                    ModifyWights(neuronIdx, input, neuronIdx, learnRate);
+                    foreach (var neighborIdx in _topology.GetNeighbourhood(neuronIdx))
+                        ModifyWights(neighborIdx, input, neuronIdx, learnRate);
+
+                    iteration ++;
                 }
             }
         }
-
 
         /// <summary>
         /// Classify the input into one of the output clusters
@@ -191,7 +211,7 @@ namespace SelfOrgenizedMap
         {
             if (neuronToChange == winnerNeuron)
                 return 0.3;
-            if (Math.Abs(neuronToChange - winnerNeuron) == 1)
+            if (_topology.GetNeighbourhood(winnerNeuron).Contains(neuronToChange))
                 return 0.1;
             return 0;
         }
