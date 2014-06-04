@@ -25,7 +25,7 @@ namespace SelfOrgenizedMapNamespace
         /// <summary>
         /// list of edges in the topology
         /// </summary>
-        protected List<KeyValuePair<int, int>> _neighboorhoodPairs;
+        protected List<Tuple<int, int>> _neighboorhoodPairs;
 
         /// <summary>
         /// matrix which contains the distance between each neuron to the other
@@ -97,16 +97,16 @@ namespace SelfOrgenizedMapNamespace
         }
 
         /// <returns>neighborhood list</returns>
-        public List<KeyValuePair<int, int>> GetNeigborhoodPairs()
+        public List<Tuple<int, int>> GetNeigborhoodPairs()
         {
             if (_neighboorhoodPairs != null) return _neighboorhoodPairs;
 
             // create the list for at the first time
-            _neighboorhoodPairs = new List<KeyValuePair<int, int>>();
+            _neighboorhoodPairs = new List<Tuple<int, int>>();
             foreach (var key in _topolgyDictionary.Keys)
                 foreach (var val in _topolgyDictionary[key])
-                    if (!_neighboorhoodPairs.Contains(new KeyValuePair<int, int>(val, key)))
-                        _neighboorhoodPairs.Add(new KeyValuePair<int, int>(key, val));
+                    if (!_neighboorhoodPairs.Contains(new Tuple<int, int>(val, key)))
+                        _neighboorhoodPairs.Add(new Tuple<int, int>(key, val));
 
             return _neighboorhoodPairs;
         }

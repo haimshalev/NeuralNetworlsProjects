@@ -17,7 +17,7 @@ using System.Windows.Shapes;
 namespace SelfOrgenizedMapNamespace
 {
 
-    public delegate void UpdateGuiDelegate(double[][] weights, List<KeyValuePair<int, int>> neighborhoodList, double learnRate, int epoch, int iterationNum);
+    public delegate void UpdateGuiDelegate(double[][] weights, List<Tuple<int, int>> neighborhoodList, double learnRate, int epoch, int iterationNum);
 
     /// <summary>
     /// Interaction logic for MainWindow.xaml
@@ -84,7 +84,7 @@ namespace SelfOrgenizedMapNamespace
         /// <param name="learnRate">current learn rate</param>
         /// <param name="epochNum">current epoch round</param>
         /// <param name="iterationNum">current learning iteration</param>
-        internal void UpdateWindow(double[][] weights, List<KeyValuePair<int, int>>neighborhoodList, double learnRate, int epochNum, int iterationNum)
+        internal void UpdateWindow(double[][] weights, List<Tuple<int, int>>neighborhoodList, double learnRate, int epochNum, int iterationNum)
         {
 
             if (!Dispatcher.CheckAccess())
@@ -120,7 +120,7 @@ namespace SelfOrgenizedMapNamespace
 
             // Draw the lines between neurons
             foreach (var keyValuePair in neighborhoodList)
-                DrawLineOnCanvas(weights[keyValuePair.Key], weights[keyValuePair.Value], Brushes.Navy, 1);
+                DrawLineOnCanvas(weights[keyValuePair.Item1], weights[keyValuePair.Item2], Brushes.Navy, 1);
 
             // update the labels
             LearnRate.Text = learnRate.ToString(CultureInfo.InvariantCulture);

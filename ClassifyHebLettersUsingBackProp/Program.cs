@@ -92,8 +92,9 @@ namespace ClassifyHebLettersUsingBackProp
                 Console.WriteLine("\nAccuracy on training data = " + trainAcc.ToString("F4"));
 
                 // get the accuracy over the test data
-                var testAcc = nn.Accuracy(testData, printEachLetterSummary:false);
+                var testAcc = nn.Accuracy(testData, printEachLetterSummary:true);
                 Console.WriteLine("\nAccuracy on test data = " + testAcc.ToString("F4"));
+                Console.ReadKey();
 
                 avgTestAccuracy += testAcc;
                 avgTrainAccuracy += trainAcc;
