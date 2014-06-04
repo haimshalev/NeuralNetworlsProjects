@@ -1,10 +1,16 @@
-﻿using System;
+﻿/****************************************
+ * Neural Networks - Project No3
+ * 
+ * ZahiKfir         200681476
+ * Haim Shalalevili 200832780
+ * Nadav Eichler    308027325
+ ***************************************/
+
+using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Threading;
 using System.Windows.Controls;
-using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Shapes;
 
@@ -21,7 +27,7 @@ namespace SelfOrgenizedMapNamespace
         private SelfOrgenizedMap _selfOrgenizedMap;
         private double[][] _data;
         private Thread _workingThread;
-        private bool _firstRun = false;
+        private bool _firstRun;
 
         public MainWindow()
         {
@@ -205,15 +211,15 @@ namespace SelfOrgenizedMapNamespace
             // prepare the data - create a torus 
             var data = new List<double[]>();
 
-            const int R = 40;
-            const int r = 10;
+            const int radiousFromCanvasCenter = 40;
+            const int torusRadious = 10;
             for (var i = 0; i < 360; i = i + 3)
                 for (var j = 0; j < 360; j = j +3)
                 {
                     double radians1 = i/(180/Math.PI);
                     double radians2 = j/(180/Math.PI);
-                    double x = (R + r * Math.Cos(radians1)) * Math.Cos(radians2);
-                    double y = (R + r * Math.Cos(radians1)) * Math.Sin(radians2);
+                    double x = (radiousFromCanvasCenter + torusRadious * Math.Cos(radians1)) * Math.Cos(radians2);
+                    double y = (radiousFromCanvasCenter + torusRadious * Math.Cos(radians1)) * Math.Sin(radians2);
 
                     data.Add(new []{x + 50 ,y + 50});
                 }
