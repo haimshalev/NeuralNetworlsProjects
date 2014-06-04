@@ -102,6 +102,12 @@ namespace SelfOrgenizedMapNamespace
         {
             var rand = new Random(DateTime.Now.Millisecond);
             var iteration = 0;
+            const double startLearnRate = 0.5;
+            const double endLearnRate = 0.1;
+            const double startAttraction = 3.0e0;
+            const double endAttraction = 1.0e-1;
+
+            double learnRate = startLearnRate + ((double)iteration / (NumEpoches * Data.Length)) * (endLearnRate - startLearnRate);
 
             // start learning - on every epoch we go over all the points in the train data
             for (int i = 0; i < NumEpoches; i++)
@@ -111,7 +117,10 @@ namespace SelfOrgenizedMapNamespace
                 while (alldata.Count != 0)
                 {
                     // decrease the learn rate
-                    double learnRate = 1 - ((double)iteration / (NumEpoches * Data.Length));
+                    learnRate = startLearnRate + ((double)iteration / (NumEpoches * Data.Length)) * (endLearnRate - startLearnRate);
+
+                    // decrease the attraction 
+                    double attraction = startAttraction + ((double) iteration/(NumEpoches*Data.Length))*(endAttraction - startAttraction);
 
                     // update the gui if necessery
                     if (iteration % MainWindowRefreshRate == 0)
@@ -121,19 +130,21 @@ namespace SelfOrgenizedMapNamespace
                     alldata.Remove(input);
 
                     // Find the closest cluster
-                    var neuronIdx = FindClosestNeuron(input);
+                    var closestNeuronIdx = FindClosestNeuron(input);
 
                     // update biases
-                    UpdateBiases(neuronIdx);
+                    UpdateBiases(closestNeuronIdx);
 
                     // change the neuron location by updating it's weights to be closer to the chosen input
-                    ModifyWights(neuronIdx, input, neuronIdx, learnRate);
-                    foreach (var neighborIdx in _topology.GetNeighbourhood(neuronIdx))
-                        ModifyWights(neighborIdx, input, neuronIdx, learnRate);
+                    for (int neuronToUpdateIdx = 0; neuronToUpdateIdx < _weights.Length; neuronToUpdateIdx++)
+                        ModifyWights(neuronToUpdateIdx, input, closestNeuronIdx, learnRate, attraction);
+                    
 
                     iteration ++;
                 }
             }
+
+            _mainWindow.UpdateWindow(_weights, _topology.GetNeigborhoodPairs(), learnRate, NumEpoches, iteration);
         }
 
         /// <summary>
@@ -167,15 +178,13 @@ namespace SelfOrgenizedMapNamespace
         /// <param name="chosenNeuronIdx"></param>
         private void UpdateBiases(int chosenNeuronIdx)
         {
-            const double biasChangeRate = 10;
+            const double biasChangeRate = 20;
 
-            _biases[chosenNeuronIdx] += biasChangeRate;
-
-            //for (int i = 0; i < _biases.Length; i++)
-            //{
-            //    if (i != chosenNeuronIdx && _biases[i] != 0) _biases[i] -= biasChangeRate;
-            //    else _biases[i] += biasChangeRate;
-            //}
+            for (int i = 0; i < _biases.Length; i++)
+            {
+                if (i != chosenNeuronIdx && _biases[i] != 0) _biases[i] -= biasChangeRate/4;
+                else _biases[i] += biasChangeRate;
+            }
         }
 
         /// <summary>
@@ -196,10 +205,10 @@ namespace SelfOrgenizedMapNamespace
         /// <param name="dataInput">data point which we want to cluster</param>
         /// <param name="closestNeuronIdx">chosen closest neuron idx </param>
         /// <param name="alpha">learn rate</param>
-        private void ModifyWights(int neuronToChangeIdx, double[] dataInput, int closestNeuronIdx, double alpha)
+        private void ModifyWights(int neuronToChangeIdx, double[] dataInput, int closestNeuronIdx, double alpha, double attraction)
         {
             for (int i = 0; i < dataInput.Length; i++)
-                _weights[neuronToChangeIdx][i] += alpha*NeighberhoodFunction(neuronToChangeIdx, closestNeuronIdx)*
+                _weights[neuronToChangeIdx][i] += alpha*NeighberhoodFunction(neuronToChangeIdx, closestNeuronIdx, attraction)*
                                                   (dataInput[i] - _weights[neuronToChangeIdx][i]);
         }
 
@@ -208,14 +217,17 @@ namespace SelfOrgenizedMapNamespace
         /// </summary>
         /// <param name="neuronToChange">the neuron which his weights are modified</param>
         /// <param name="winnerNeuron">the neuron which represent the winner claster</param>
-        /// <returns>amoount of modification</returns>
-        private double NeighberhoodFunction(int neuronToChange, int winnerNeuron)
+        /// <param name="attraction">attraction factor</param>
+        /// <returns>amount of modification acording to the topology</returns>
+        private double NeighberhoodFunction(int neuronToChange, int winnerNeuron, double attraction)
         {
-            if (neuronToChange == winnerNeuron)
-                return 0.3;
-            if (_topology.GetNeighbourhood(winnerNeuron).Contains(neuronToChange))
-                return 0.1;
-            return 0;
+            var distanceBetweenNeurons = _topology.GetDistance(neuronToChange, winnerNeuron);
+
+            //using maxican hat neighberhood function
+            return Math.Exp(
+                     ((distanceBetweenNeurons*distanceBetweenNeurons) / (2*attraction*attraction)) *
+                     (1 - (2*distanceBetweenNeurons*distanceBetweenNeurons) / (2*attraction*attraction))
+                     );
         }
     }
 }

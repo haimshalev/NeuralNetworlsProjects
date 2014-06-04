@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace SelfOrgenizedMapNamespace
 {
@@ -13,7 +15,15 @@ namespace SelfOrgenizedMapNamespace
         /// </summary>
         protected Dictionary<int, List<int>> _topolgyDictionary = new Dictionary<int, List<int>>();
 
+        /// <summary>
+        /// list of edges in the topology
+        /// </summary>
         protected List<KeyValuePair<int, int>> _neighboorhoodPairs;
+
+        /// <summary>
+        /// matrix which contains the distance between each neuron to the other
+        /// </summary>
+        protected int[][] _distanceMatrix;
 
         /// <summary>
         /// used for initializing the topology
@@ -33,6 +43,50 @@ namespace SelfOrgenizedMapNamespace
             if (_topolgyDictionary.ContainsKey(neuronIdx))
                 return _topolgyDictionary[neuronIdx];
             throw new ArgumentOutOfRangeException();
+        }
+
+        /// <returns>the distance between two neurons on the specified topology</returns>
+        public int GetDistance(int neuron1Idx, int neuron2Idx)
+        {
+            if (_distanceMatrix != null) return _distanceMatrix[neuron1Idx][neuron2Idx];
+
+            // if the distance matrix was not created , create it
+            _distanceMatrix = new int[_topolgyDictionary.Count][];
+                
+            // for every node create it's distance vector to every one else using dijkstra algorithm
+            for (var i = 0; i < _distanceMatrix.Length; i++)
+            {
+                // create an array with -1 on every cell
+                _distanceMatrix[i] = Enumerable.Repeat(-1,_distanceMatrix.Length).ToArray();
+
+                var nodes = Enumerable.Range(0, _topolgyDictionary.Count).ToList();
+                var thisRoundNodes = new List<int>();
+                var nextRoundNodes = new List<int>{i};
+                var distance = 0;
+                    
+                while (nodes.Count() != 0 && nextRoundNodes.Count() != 0)
+                {
+                    thisRoundNodes.AddRange(nextRoundNodes);
+                    nextRoundNodes.Clear();
+
+                    foreach (var thisRoundNode in thisRoundNodes)
+                    {
+                        // remove the node from the discovery list
+                        nodes.Remove(thisRoundNode);
+
+                        // set the distance
+                        if (_distanceMatrix[i][thisRoundNode] == -1) _distanceMatrix[i][thisRoundNode]  = distance;
+
+                        // add his neighboors to the next round list
+                        nextRoundNodes.AddRange(GetNeighbourhood(thisRoundNode).Intersect(nodes));
+                    }
+
+                    thisRoundNodes.Clear();
+                    distance++;
+                }
+            }
+
+            return _distanceMatrix[neuron1Idx][neuron2Idx];
         }
 
         /// <returns>neighborhood list</returns>

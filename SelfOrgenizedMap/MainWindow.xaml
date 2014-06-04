@@ -2,13 +2,16 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="d" x:Class="SelfOrgenizedMapNamespace.MainWindow"
-        Title="MainWindow" Height="210" Width="372">
+        Title="MainWindow" Height="210" Width="390">
     <Grid Margin="0,0,0,-21">
         <Canvas x:Name="MainCanvas" HorizontalAlignment="Left" Height="100" Margin="0,0,0,0" VerticalAlignment="Top" Width="100" Background="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}"/>
-        <TextBox x:Name="SetNumEpoches" ToolTip="Set the number of epoches" HorizontalAlignment="Left" Height="23" Margin="115,10,0,0" TextWrapping="Wrap" Text="10" VerticalAlignment="Top" Width="49"/>
-        <TextBox x:Name="SetRefreshRate" ToolTip="Set when to refresh the main canvas" HorizontalAlignment="Left" Height="23" Margin="169,10,0,0" TextWrapping="Wrap" Text="25" VerticalAlignment="Top" Width="40"/>
-        <TextBox x:Name="SetNumOfClasters" ToolTip="Set the number of neurons used in the Kohonen layer" HorizontalAlignment="Left" Height="23" Margin="214,10,0,0" TextWrapping="Wrap" Text="100" VerticalAlignment="Top" Width="46"/>
-        <Label Content="EpochNum:" HorizontalAlignment="Left" Margin="138,41,0,0" VerticalAlignment="Top"/>
+        <Label Content="Num Epoches" HorizontalAlignment="Left" Margin="115,-2,0,0" VerticalAlignment="Top"/>
+        <TextBox x:Name="SetNumEpoches" ToolTip="Set the number of epoches" HorizontalAlignment="Left" Height="23" Margin="138,24,0,0" TextWrapping="Wrap" Text="10" VerticalAlignment="Top" Width="49"/>
+        <Label Content="Refresh Rate" HorizontalAlignment="Left" Margin="198,0,0,0" VerticalAlignment="Top"/>
+        <TextBox x:Name="SetRefreshRate" ToolTip="Set when to refresh the main canvas" HorizontalAlignment="Left" Height="23" Margin="222,24,0,0" TextWrapping="Wrap" Text="25" VerticalAlignment="Top" Width="40"/>
+        <Label Content="Num of Clusterrs" HorizontalAlignment="Left" Margin="273,0,0,0" VerticalAlignment="Top"/>
+        <TextBox x:Name="SetNumOfClasters" ToolTip="Set the number of neurons used in the Kohonen layer" HorizontalAlignment="Left" Height="23" Margin="284,24,0,0" TextWrapping="Wrap" Text="100" VerticalAlignment="Top" Width="46"/>
+        <Label Content="EpochNum:" HorizontalAlignment="Left" Margin="138,45,0,0" VerticalAlignment="Top"/>
         <TextBlock HorizontalAlignment="Left" Margin="224,48,0,0" TextWrapping="Wrap" x:Name="EpochNum" Text="" VerticalAlignment="Top"/>
         <Label Content="IterationNum:" HorizontalAlignment="Left" Margin="138,67,0,0" VerticalAlignment="Top"/>
         <TextBlock HorizontalAlignment="Left" Margin="224,77,0,0" TextWrapping="Wrap" x:Name="IterationNum" Text="" VerticalAlignment="Top"/>

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Threading;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -20,6 +21,7 @@ namespace SelfOrgenizedMapNamespace
         private SelfOrgenizedMap _selfOrgenizedMap;
         private double[][] _data;
         private Thread _workingThread;
+        private bool _firstRun = false;
 
         public MainWindow()
         {
@@ -90,12 +92,21 @@ namespace SelfOrgenizedMapNamespace
                 return;
             }
 
-            // Clear the canvas from the previous update
-            MainCanvas.Children.Clear();
+            // Draw the data points once
+            if (_firstRun)
+            {
+                MainCanvas.Children.Clear();
 
-            // Draw the data points
-            foreach (var d in _data)
-                DrawPointOnCanvas(d, Colors.Red, 1);
+                _firstRun = false;
+                foreach (var d in _data)
+                    DrawPointOnCanvas(d, Colors.Red, 1);
+            }
+            else
+            {
+                // Clear the canvas from the previous update
+                MainCanvas.Children.RemoveRange(_data.Length, MainCanvas.Children.Count);
+            }
+            
 
             // Draw all the neurons on the canvas
             foreach (var w in weights)
@@ -126,6 +137,8 @@ namespace SelfOrgenizedMapNamespace
             _selfOrgenizedMap.Data = _data;
             _selfOrgenizedMap.MainWindowRefreshRate = int.Parse(SetRefreshRate.Text);
             _selfOrgenizedMap.NumEpoches = int.Parse(SetNumEpoches.Text);
+
+            _firstRun = true;
 
             // learn
             _workingThread = new Thread(_selfOrgenizedMap.Learn);
