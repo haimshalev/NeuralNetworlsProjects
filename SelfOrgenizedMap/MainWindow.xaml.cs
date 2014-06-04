@@ -178,11 +178,18 @@ namespace SelfOrgenizedMapNamespace
             var dataSize = (int)(MainCanvas.Height * MainCanvas.Width);
             var data = new double[dataSize][];
             for (var i = 0; i < MainCanvas.Height; i++)
-                for (var j = 0; j < MainCanvas.Width; j++)
-                {
+            {
+                var x = rand.Next(0,(int)MainCanvas.Width);
+                var y = rand.Next(0,(int)MainCanvas.Height);
+
+                for (var j = 0; j < MainCanvas.Height; j++)
                     data[(i * ((int)MainCanvas.Width)) + j] = new []
-                    {rand.Next((int) MainCanvas.Width/2), rand.Next((int) MainCanvas.Height/2) + MainCanvas.Height/2};
-                }
+                    {
+                        rand.Next(x-5,x+5),
+                        (double)rand.Next(y - 5, y +5)
+                    };
+                
+            }
 
             // Initialize Self Orgenized map 
             var selfOrgenizedMap = new SelfOrgnizedMap<LineTopology>(2, int.Parse(SetNumOfClasters.Text), this);
