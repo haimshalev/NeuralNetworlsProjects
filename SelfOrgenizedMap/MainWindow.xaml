@@ -6,9 +6,9 @@
     <Grid Margin="0,0,0,-21">
         <Canvas x:Name="MainCanvas" HorizontalAlignment="Left" Height="100" Margin="0,0,0,0" VerticalAlignment="Top" Width="100" Background="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}"/>
         <Label Content="Num Epoches" HorizontalAlignment="Left" Margin="115,-2,0,0" VerticalAlignment="Top"/>
-        <TextBox x:Name="SetNumEpoches" ToolTip="Set the number of epoches" HorizontalAlignment="Left" Height="23" Margin="138,24,0,0" TextWrapping="Wrap" Text="10" VerticalAlignment="Top" Width="49"/>
+        <TextBox x:Name="SetNumEpoches" ToolTip="Set the number of epoches" HorizontalAlignment="Left" Height="23" Margin="138,24,0,0" TextWrapping="Wrap" Text="1" VerticalAlignment="Top" Width="49"/>
         <Label Content="Refresh Rate" HorizontalAlignment="Left" Margin="198,0,0,0" VerticalAlignment="Top"/>
-        <TextBox x:Name="SetRefreshRate" ToolTip="Set when to refresh the main canvas" HorizontalAlignment="Left" Height="23" Margin="222,24,0,0" TextWrapping="Wrap" Text="25" VerticalAlignment="Top" Width="40"/>
+        <TextBox x:Name="SetRefreshRate" ToolTip="Set when to refresh the main canvas" HorizontalAlignment="Left" Height="23" Margin="222,24,0,0" TextWrapping="Wrap" Text="150" VerticalAlignment="Top" Width="40"/>
         <Label Content="Num of Clusterrs" HorizontalAlignment="Left" Margin="273,0,0,0" VerticalAlignment="Top"/>
         <TextBox x:Name="SetNumOfClasters" ToolTip="Set the number of neurons used in the Kohonen layer" HorizontalAlignment="Left" Height="23" Margin="284,24,0,0" TextWrapping="Wrap" Text="100" VerticalAlignment="Top" Width="46"/>
         <Label Content="EpochNum:" HorizontalAlignment="Left" Margin="138,45,0,0" VerticalAlignment="Top"/>
